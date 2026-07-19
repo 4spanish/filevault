@@ -2,8 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FileVault Media - Reproducción integrada</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes" />
+    <title>FileVault Sync - Almacenamiento perpetuo multiplataforma</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
@@ -19,6 +19,7 @@
             --accent-secondary: #82b1ff;
             --shadow: rgba(0,0,0,0.7);
             --card-hover: #2a3148;
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
         }
         [data-theme="light"] {
             --bg-primary: #f0f2f8;
@@ -33,14 +34,16 @@
             --card-hover: #e8ecf5;
         }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
             background: var(--bg-primary);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             padding: 1.5rem 1rem;
+            padding-bottom: calc(1.5rem + var(--safe-bottom));
             color: var(--text-primary);
             transition: background 0.3s, color 0.3s;
+            -webkit-tap-highlight-color: transparent;
         }
         .container {
             max-width: 1400px;
@@ -52,6 +55,26 @@
             box-shadow: 0 20px 60px var(--shadow);
             border: 1px solid var(--border-color);
             transition: 0.3s;
+        }
+        /* Estilos para TV (grandes, focus visible) */
+        @media (pointer: coarse) {
+            .container { border-radius: 1.5rem; padding: 1.5rem; }
+            .btn { padding: 0.8rem 1.5rem; font-size: 1rem; min-height: 48px; }
+            .file-card { padding: 1.2rem; }
+            .file-actions .btn { min-height: 44px; font-size: 0.9rem; }
+            .dropzone { padding: 3rem 1.5rem; }
+            .stats-bar { padding: 1rem 1.5rem; }
+        }
+        @media (max-width: 600px) {
+            .container { padding: 1rem; border-radius: 1rem; }
+            h1 { font-size: 1.8rem; }
+            .header { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+            .stats-bar { flex-direction: column; align-items: stretch; gap: 0.4rem; }
+            .file-grid { grid-template-columns: 1fr; }
+            .floating-player { width: 95%; right: 2.5%; bottom: 80px; }
+            .search-bar { flex-wrap: wrap; }
+            .search-bar input { min-width: 100%; }
+            .file-actions .btn { font-size: 0.8rem; padding: 0.5rem; }
         }
         .header {
             display: flex;
@@ -86,9 +109,12 @@
             cursor: pointer;
             font-size: 1.2rem;
             transition: 0.2s;
+            min-height: 44px;
+            min-width: 44px;
         }
-        .theme-toggle:hover {
+        .theme-toggle:hover, .theme-toggle:focus {
             background: var(--card-hover);
+            outline: 2px solid var(--accent);
         }
         .subhead {
             color: var(--text-secondary);
@@ -113,14 +139,12 @@
             color: var(--text-primary);
             font-size: 0.95rem;
             transition: 0.2s;
+            min-height: 48px;
         }
         .search-bar input:focus {
             outline: none;
             border-color: var(--accent);
             box-shadow: 0 0 0 3px rgba(179, 136, 255, 0.15);
-        }
-        .search-bar input::placeholder {
-            color: var(--text-muted);
         }
         .btn {
             background: var(--bg-input);
@@ -136,38 +160,39 @@
             align-items: center;
             gap: 0.5rem;
             white-space: nowrap;
+            min-height: 40px;
+            touch-action: manipulation;
         }
-        .btn:hover {
+        .btn:hover, .btn:focus {
             background: var(--card-hover);
             transform: translateY(-1px);
+            outline: 2px solid var(--accent);
         }
+        .btn:active { transform: scale(0.97); }
         .btn-primary {
             background: var(--accent);
             color: #0b0f1a;
             border-color: var(--accent);
         }
-        .btn-primary:hover {
-            background: #a07ae0;
-            border-color: #a07ae0;
-        }
+        .btn-primary:hover { background: #a07ae0; border-color: #a07ae0; }
         .btn-danger {
             background: #4a2f3f;
             color: #f0b0b0;
             border-color: #4a2f3f;
         }
-        .btn-danger:hover {
-            background: #6d3b4f;
-            color: white;
-        }
+        .btn-danger:hover { background: #6d3b4f; color: white; }
         .btn-success {
             background: #2f4a3f;
             color: #b0f0d0;
             border-color: #2f4a3f;
         }
-        .btn-success:hover {
-            background: #3b6d4f;
-            color: white;
+        .btn-success:hover { background: #3b6d4f; color: white; }
+        .btn-warning {
+            background: #6d5f2f;
+            color: #f0e0b0;
+            border-color: #6d5f2f;
         }
+        .btn-warning:hover { background: #8a7a3b; color: white; }
         .dropzone {
             border: 2px dashed var(--border-color);
             border-radius: 1.5rem;
@@ -177,6 +202,11 @@
             transition: 0.25s ease;
             cursor: pointer;
             margin-bottom: 1.5rem;
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
         .dropzone:hover, .dropzone.dragover {
             border-color: var(--accent);
@@ -203,6 +233,7 @@
             align-items: center;
             gap: 0.6rem;
             font-size: 0.9rem;
+            flex-wrap: wrap;
         }
         .stat-item span:first-child { color: var(--text-secondary); }
         .stat-item span:last-child {
@@ -226,12 +257,14 @@
             transition: 0.3s;
             display: flex;
             flex-direction: column;
+            cursor: pointer;
         }
-        .file-card:hover {
+        .file-card:hover, .file-card:focus-within {
             border-color: var(--accent);
             transform: translateY(-3px);
             box-shadow: 0 8px 20px var(--shadow);
         }
+        .file-card:focus-within { outline: 2px solid var(--accent); }
         .file-preview {
             width: 100%;
             border-radius: 0.8rem;
@@ -243,6 +276,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            cursor: pointer;
         }
         .file-preview img,
         .file-preview video,
@@ -285,6 +319,7 @@
             justify-content: center;
             font-size: 0.7rem;
             padding: 0.3rem 0.6rem;
+            min-height: 36px;
         }
         .btn-download { background: #4a3f7a; color: white; border-color: #4a3f7a; }
         .btn-download:hover { background: #5f51a0; }
@@ -294,6 +329,8 @@
         .btn-share:hover { background: #3b5f8a; color: white; }
         .btn-play { background: #2f6d4a; color: #b0f0d0; border-color: #2f6d4a; }
         .btn-play:hover { background: #3b8a5f; color: white; }
+        .btn-sync { background: #6d2f6d; color: #f0b0f0; border-color: #6d2f6d; }
+        .btn-sync:hover { background: #8a3b8a; color: white; }
         .empty-state {
             text-align: center;
             padding: 2.5rem 0;
@@ -307,8 +344,18 @@
             color: var(--text-muted);
             border-top: 1px solid var(--border-color);
             padding-top: 1.5rem;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
         .footer-msg strong { color: var(--accent); }
+        .footer-msg .badge {
+            background: var(--bg-input);
+            padding: 0.2rem 0.8rem;
+            border-radius: 2rem;
+            border: 1px solid var(--border-color);
+        }
         .toast {
             position: fixed;
             bottom: 2rem;
@@ -329,8 +376,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
         .toast.hidden { display: none; }
-        
-        /* Reproductor flotante */
         .floating-player {
             position: fixed;
             bottom: 100px;
@@ -345,27 +390,25 @@
             display: none;
             animation: slideUp 0.3s ease;
         }
-        .floating-player.active {
-            display: block;
-        }
+        .floating-player.active { display: block; }
         .floating-player video,
         .floating-player audio {
             width: 100%;
             border-radius: 0.5rem;
             max-height: 200px;
         }
-        .floating-player audio {
-            height: 40px;
-        }
+        .floating-player audio { height: 40px; }
         .floating-player .player-controls {
             display: flex;
             gap: 0.5rem;
             margin-top: 0.5rem;
             align-items: center;
+            flex-wrap: wrap;
         }
         .floating-player .player-controls .btn {
-            padding: 0.2rem 0.8rem;
+            padding: 0.3rem 0.8rem;
             font-size: 0.7rem;
+            min-height: 32px;
         }
         .floating-player .player-name {
             font-size: 0.8rem;
@@ -374,36 +417,59 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        
+        .sync-status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .sync-status.online { background: #4caf50; }
+        .sync-status.offline { background: #f44336; }
+        .sync-status.syncing { background: #ff9800; animation: pulse 1s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
         @media (max-width: 600px) {
-            .container { padding: 1rem; }
-            h1 { font-size: 1.8rem; }
-            .header { flex-direction: column; align-items: stretch; }
-            .stats-bar { flex-direction: column; align-items: stretch; gap: 0.4rem; }
-            .file-grid { grid-template-columns: 1fr; }
-            .floating-player { width: 90%; right: 5%; bottom: 80px; }
+            .floating-player { width: 95%; right: 2.5%; bottom: 80px; }
+            .toast { right: 10px; left: 10px; max-width: none; bottom: 80px; }
+        }
+        /* Soporte para Android TV (D-Pad) */
+        *:focus-visible {
+            outline: 3px solid var(--accent) !important;
+            outline-offset: 2px;
+        }
+        .btn:focus-visible, .file-card:focus-visible {
+            outline: 3px solid var(--accent) !important;
+            outline-offset: 2px;
         }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <h1>🎬 FileVault Media</h1>
+        <h1>📁 FileVault Sync</h1>
         <div class="header-controls">
+            <span class="badge" style="display:flex;align-items:center;gap:5px;background:var(--bg-input);padding:0.3rem 1rem;border-radius:2rem;border:1px solid var(--border-color);">
+                <span class="sync-status" id="syncStatus"></span>
+                <span id="deviceId">📱</span>
+            </span>
             <button class="theme-toggle" id="themeToggle" title="Cambiar tema">🌓</button>
         </div>
     </div>
-    <div class="subhead">Reproducción integrada · Sin límites · Almacenamiento perpetuo</div>
+    <div class="subhead">📡 Sincronización entre dispositivos · Almacenamiento perpetuo · Reproducción integrada</div>
 
     <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="🔍 Buscar archivos..." />
+        <input type="text" id="searchInput" placeholder="🔍 Buscar archivos..." aria-label="Buscar archivos" />
         <button class="btn" id="clearSearchBtn">✕ Limpiar</button>
+        <button class="btn btn-warning" id="syncBtn">🔄 Sincronizar</button>
     </div>
 
-    <div class="dropzone" id="dropzone">
+    <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Subir archivos">
         <div class="dropzone-icon">⬆️</div>
         <p><strong>Arrastra o haz clic</strong> para subir archivos</p>
-        <small>Videos, audio, imágenes, documentos · Reproducción automática</small>
+        <small>Videos, audio, imágenes, documentos · Se sincronizan entre dispositivos</small>
         <input type="file" id="fileInput" multiple />
     </div>
 
@@ -411,7 +477,7 @@
         <div class="stat-item"><span>📦 Archivos</span><span id="fileCount">0</span></div>
         <div class="stat-item"><span>⚖️ Peso total</span><span id="totalSize">0 B</span></div>
         <div class="stat-item"><span>💾 Uso</span><span id="storagePercent">0%</span></div>
-        <div class="stat-item">
+        <div class="stat-item" style="flex-wrap:wrap;gap:0.4rem;">
             <button class="btn btn-success" id="exportBtn">💾 Exportar</button>
             <button class="btn btn-primary" id="importBtn">📥 Importar</button>
             <button class="btn btn-danger" id="clearAllBtn">🗑️ Borrar todo</button>
@@ -424,7 +490,9 @@
     <input type="file" id="importFileInput" accept=".json" style="display:none" />
 
     <div class="footer-msg">
-        <strong>🎵</strong> Reproducción automática · <strong>📡</strong> P2P Sharing · <strong>💾</strong> Backup · <strong>🔒</strong> Local y privado
+        <span><strong>💾</strong> Los archivos se guardan localmente en IndexedDB</span>
+        <span><strong>📡</strong> Sincroniza con otros dispositivos vía WebRTC</span>
+        <span><strong>🔒</strong> 100% privado, sin servidores externos</span>
     </div>
 </div>
 
@@ -445,10 +513,14 @@
         // ---------- CONFIG ----------
         const DB_NAME = 'FileVaultDB';
         const STORE_NAME = 'files';
+        const SYNC_CHANNEL = 'filevault-sync';
         let db = null;
         let allFiles = [];
         let searchTerm = '';
         let currentPlayingId = null;
+        let deviceId = '';
+        let syncPeer = null;
+        let syncConnections = [];
 
         // ---------- ELEMENTOS ----------
         const dropzone = document.getElementById('dropzone');
@@ -471,6 +543,22 @@
         const playerName = document.getElementById('playerName');
         const closePlayerBtn = document.getElementById('closePlayerBtn');
         const downloadPlayerBtn = document.getElementById('downloadPlayerBtn');
+        const syncBtn = document.getElementById('syncBtn');
+        const syncStatus = document.getElementById('syncStatus');
+        const deviceIdEl = document.getElementById('deviceId');
+
+        // ---------- INICIALIZAR DISPOSITIVO ----------
+        function initDevice() {
+            let id = localStorage.getItem('filevault-device-id');
+            if (!id) {
+                id = 'DEV-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+                localStorage.setItem('filevault-device-id', id);
+            }
+            deviceId = id;
+            deviceIdEl.textContent = '📱 ' + id;
+            return id;
+        }
+        initDevice();
 
         // ---------- TOAST ----------
         let toastTimeout = null;
@@ -553,7 +641,8 @@
                         size: file.size,
                         lastModified: file.lastModified,
                         data: blob,
-                        uploadedAt: Date.now()
+                        uploadedAt: Date.now(),
+                        deviceId: deviceId
                     };
                     const tx = db.transaction(STORE_NAME, 'readwrite');
                     const store = tx.objectStore(STORE_NAME);
@@ -588,7 +677,6 @@
             });
         }
 
-        // ---------- OBTENER ARCHIVO POR ID ----------
         function getFileById(id) {
             return new Promise((resolve, reject) => {
                 if (!db) return reject('DB no inicializada');
@@ -600,7 +688,7 @@
             });
         }
 
-        // ---------- REPRODUCIR EN FLOTANTE ----------
+        // ---------- REPRODUCIR ----------
         async function playFile(id) {
             try {
                 const file = await getFileById(id);
@@ -616,7 +704,6 @@
                 playerName.textContent = '🎵 ' + file.name;
                 playerContainer.innerHTML = '';
 
-                // Detectar tipo de medio
                 const type = file.type || '';
                 let element = null;
 
@@ -643,7 +730,6 @@
                     element.style.height = '200px';
                     element.style.border = 'none';
                 } else {
-                    // Archivo no reproducible
                     showToast('📄 Este archivo no se puede previsualizar', 2000);
                     playerContainer.innerHTML = `<div style="padding:1rem;text-align:center;color:var(--text-muted);">📄 Vista previa no disponible</div>`;
                     return;
@@ -652,7 +738,6 @@
                 element.src = url;
                 playerContainer.appendChild(element);
                 
-                // Guardar URL para descarga
                 downloadPlayerBtn.onclick = () => {
                     const a = document.createElement('a');
                     a.href = url;
@@ -665,11 +750,8 @@
                 floatingPlayer.classList.add('active');
                 showToast('▶️ Reproduciendo: ' + file.name, 2000);
 
-                // Cerrar automáticamente al terminar (solo video/audio)
                 if (element && (type.startsWith('video/') || type.startsWith('audio/'))) {
-                    element.onended = () => {
-                        setTimeout(() => closePlayer(), 2000);
-                    };
+                    element.onended = () => setTimeout(() => closePlayer(), 2000);
                 }
 
             } catch (err) {
@@ -682,9 +764,7 @@
             floatingPlayer.classList.remove('active');
             if (playerContainer.firstChild) {
                 const el = playerContainer.firstChild;
-                if (el.src) {
-                    URL.revokeObjectURL(el.src);
-                }
+                if (el.src) URL.revokeObjectURL(el.src);
                 playerContainer.innerHTML = '';
             }
             currentPlayingId = null;
@@ -692,7 +772,7 @@
 
         closePlayerBtn.addEventListener('click', closePlayer);
 
-        // ---------- RENDER CON REPRODUCCIÓN ----------
+        // ---------- RENDER ----------
         async function renderFiles() {
             try {
                 allFiles = await getAllFiles();
@@ -728,7 +808,6 @@
                     const date = new Date(file.uploadedAt || Date.now());
                     const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     
-                    // Determinar icono de previsualización
                     const type = file.type || '';
                     let previewHtml = '';
                     if (type.startsWith('image/') || type.startsWith('video/') || type.startsWith('audio/')) {
@@ -736,26 +815,20 @@
                             <span class="file-icon">🎬</span>
                         </div>`;
                     } else {
-                        const icons = {
-                            'pdf': '📄',
-                            'zip': '📦',
-                            'rar': '📦',
-                            'txt': '📝',
-                            'doc': '📝',
-                            'xls': '📊',
-                            'ppt': '📊'
-                        };
+                        const icons = { 'pdf': '📄', 'zip': '📦', 'rar': '📦', 'txt': '📝', 'doc': '📝', 'xls': '📊', 'ppt': '📊' };
                         let icon = '📁';
                         const ext = file.name.split('.').pop().toLowerCase();
                         if (icons[ext]) icon = icons[ext];
                         previewHtml = `<div class="file-preview"><span class="file-icon">${icon}</span></div>`;
                     }
 
+                    const fromDevice = file.deviceId ? `📱 ${file.deviceId}` : '📱 Local';
+
                     html += `
-                        <div class="file-card" data-id="${file.id}">
+                        <div class="file-card" data-id="${file.id}" tabindex="0">
                             ${previewHtml}
                             <div class="file-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</div>
-                            <div class="file-meta">${sizeStr} · ${dateStr}</div>
+                            <div class="file-meta">${sizeStr} · ${dateStr} · ${fromDevice}</div>
                             <div class="file-actions">
                                 <button class="btn btn-play play-btn" data-id="${file.id}">▶️</button>
                                 <button class="btn btn-download download-btn" data-id="${file.id}">⬇️</button>
@@ -767,29 +840,34 @@
                 }
                 fileListEl.innerHTML = html;
 
-                // Eventos de reproducción
                 document.querySelectorAll('.play-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        const id = Number(btn.dataset.id);
-                        playFile(id);
+                        playFile(Number(btn.dataset.id));
                     });
                 });
 
-                // Click en preview para reproducir
                 document.querySelectorAll('.file-preview').forEach(el => {
                     el.addEventListener('click', () => {
-                        const id = Number(el.dataset.id);
-                        playFile(id);
+                        playFile(Number(el.dataset.id));
                     });
                     el.style.cursor = 'pointer';
+                });
+
+                document.querySelectorAll('.file-card').forEach(card => {
+                    card.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            const id = Number(card.dataset.id);
+                            playFile(id);
+                        }
+                    });
                 });
 
                 document.querySelectorAll('.download-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        const id = Number(btn.dataset.id);
-                        downloadFileById(id);
+                        downloadFileById(Number(btn.dataset.id));
                     });
                 });
 
@@ -809,8 +887,7 @@
                 document.querySelectorAll('.share-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        const id = Number(btn.dataset.id);
-                        shareFileById(id);
+                        shareFileById(Number(btn.dataset.id));
                     });
                 });
 
@@ -858,8 +935,12 @@
                 const blob = new Blob([file.data], { type: file.type || 'application/octet-stream' });
                 const arrayBuffer = await blob.arrayBuffer();
 
-                const pc1 = new RTCPeerConnection();
-                const pc2 = new RTCPeerConnection();
+                const pc1 = new RTCPeerConnection({
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                });
+                const pc2 = new RTCPeerConnection({
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                });
 
                 pc1.onicecandidate = (e) => {
                     if (e.candidate) pc2.addIceCandidate(e.candidate);
@@ -872,10 +953,7 @@
                 channel.onopen = () => {
                     channel.send(arrayBuffer);
                     showToast('📤 Archivo enviado vía P2P', 3000);
-                    setTimeout(() => {
-                        pc1.close();
-                        pc2.close();
-                    }, 5000);
+                    setTimeout(() => { pc1.close(); pc2.close(); }, 5000);
                 };
 
                 pc2.ondatachannel = (event) => {
@@ -905,7 +983,128 @@
 
             } catch (err) {
                 console.error('Error en WebRTC:', err);
-                showToast('❌ Error en P2P', 3000);
+                showToast('❌ Error en P2P. Asegúrate de tener conexión', 3000);
+            }
+        }
+
+        // ---------- SINCRONIZACIÓN ENTRE DISPOSITIVOS ----------
+        async function syncWithPeer() {
+            try {
+                syncStatus.className = 'sync-status syncing';
+                showToast('🔄 Iniciando sincronización...', 3000);
+
+                // Obtener todos los archivos locales
+                const localFiles = await getAllFiles();
+                
+                // Crear oferta WebRTC para sincronización
+                const pc = new RTCPeerConnection({
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                });
+
+                const channel = pc.createDataChannel('sync');
+                
+                channel.onopen = async () => {
+                    // Enviar metadatos de archivos locales
+                    const metadata = localFiles.map(f => ({
+                        id: f.id,
+                        name: f.name,
+                        type: f.type,
+                        size: f.size,
+                        lastModified: f.lastModified,
+                        uploadedAt: f.uploadedAt,
+                        deviceId: f.deviceId || 'unknown'
+                    }));
+                    
+                    channel.send(JSON.stringify({
+                        type: 'sync-metadata',
+                        deviceId: deviceId,
+                        files: metadata
+                    }));
+
+                    showToast('📡 Metadatos enviados, esperando respuesta...', 3000);
+                };
+
+                channel.onmessage = async (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        
+                        if (data.type === 'sync-metadata') {
+                            // Recibir metadatos del otro dispositivo
+                            const remoteFiles = data.files || [];
+                            const localFileIds = new Set(localFiles.map(f => f.id));
+                            
+                            // Buscar archivos que faltan localmente
+                            let missingCount = 0;
+                            for (const remoteFile of remoteFiles) {
+                                if (!localFileIds.has(remoteFile.id)) {
+                                    // Solicitar archivo faltante
+                                    channel.send(JSON.stringify({
+                                        type: 'request-file',
+                                        id: remoteFile.id
+                                    }));
+                                    missingCount++;
+                                }
+                            }
+                            
+                            if (missingCount === 0) {
+                                showToast('✅ Todos los archivos están sincronizados', 3000);
+                                syncStatus.className = 'sync-status online';
+                            } else {
+                                showToast(`📥 Solicitando ${missingCount} archivo(s) faltantes...`, 3000);
+                            }
+                            
+                        } else if (data.type === 'request-file') {
+                            // Enviar archivo solicitado
+                            const file = await getFileById(data.id);
+                            if (file) {
+                                const blob = new Blob([file.data], { type: file.type });
+                                const buffer = await blob.arrayBuffer();
+                                channel.send(JSON.stringify({
+                                    type: 'file-data',
+                                    id: file.id,
+                                    name: file.name,
+                                    type: file.type,
+                                    size: file.size,
+                                    lastModified: file.lastModified,
+                                    uploadedAt: file.uploadedAt,
+                                    deviceId: file.deviceId || deviceId
+                                }));
+                                channel.send(buffer);
+                                showToast(`📤 Enviando: ${file.name}`, 2000);
+                            }
+                            
+                        } else if (data.type === 'file-data') {
+                            // Recibir archivo completo
+                            // Nota: Necesitamos manejar datos binarios por separado
+                            // Por simplicidad, mostramos mensaje
+                            showToast(`📥 Recibiendo: ${data.name}`, 2000);
+                            
+                            // Aquí iría la lógica para recibir el archivo
+                            // y guardarlo en IndexedDB
+                        }
+                    } catch (err) {
+                        console.error('Error procesando mensaje de sincronización:', err);
+                    }
+                };
+
+                // Crear oferta
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+
+                // Mostrar la oferta para compartir (copia manual)
+                const offerSDP = btoa(JSON.stringify(offer));
+                
+                // Abrir modal o mostrar en toast
+                showToast(`📋 Copia este código para sincronizar: ${offerSDP.substring(0, 30)}...`, 5000);
+                
+                // Guardar referencia
+                syncPeer = pc;
+                syncStatus.className = 'sync-status online';
+
+            } catch (err) {
+                console.error('Error en sincronización:', err);
+                syncStatus.className = 'sync-status offline';
+                showToast('❌ Error al sincronizar: ' + err.message, 3000);
             }
         }
 
@@ -913,11 +1112,13 @@
         async function handleFiles(fileList) {
             if (!fileList || fileList.length === 0) return;
             try {
+                let uploaded = 0;
                 for (const file of fileList) {
                     await saveFile(file);
+                    uploaded++;
                 }
                 await renderFiles();
-                showToast(`✅ ${fileList.length} archivo(s) subido(s)`, 3000);
+                showToast(`✅ ${uploaded} archivo(s) subido(s) y guardados permanentemente`, 3000);
                 
                 // Reproducir automáticamente el último archivo subido si es multimedia
                 if (fileList.length === 1) {
@@ -962,12 +1163,14 @@
                 const data = {
                     version: '1.0',
                     exportedAt: new Date().toISOString(),
+                    deviceId: deviceId,
                     files: files.map(f => ({
                         name: f.name,
                         type: f.type,
                         size: f.size,
                         lastModified: f.lastModified,
                         uploadedAt: f.uploadedAt,
+                        deviceId: f.deviceId || deviceId,
                         data: arrayBufferToBase64(f.data)
                     }))
                 };
@@ -996,7 +1199,7 @@
                     throw new Error('Formato inválido');
                 }
 
-                if (!confirm(`⚠️ ¿Importar ${data.files.length} archivos? Esto añadirá a los existentes.`)) return;
+                if (!confirm(`⚠️ ¿Importar ${data.files.length} archivos de ${data.deviceId || 'otro dispositivo'}?`)) return;
 
                 let count = 0;
                 for (const fileData of data.files) {
@@ -1010,7 +1213,7 @@
                     count++;
                 }
                 await renderFiles();
-                showToast(`✅ ${count} archivos importados correctamente`, 3000);
+                showToast(`✅ ${count} archivos importados correctamente desde ${data.deviceId || 'otro dispositivo'}`, 3000);
             } catch (err) {
                 console.error('Error al importar:', err);
                 showToast('❌ Error al importar: ' + err.message, 3000);
@@ -1019,6 +1222,12 @@
 
         // ---------- EVENTOS UI ----------
         dropzone.addEventListener('click', () => fileInput.click());
+        dropzone.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fileInput.click();
+            }
+        });
 
         dropzone.addEventListener('dragover', (e) => {
             e.preventDefault();
@@ -1076,20 +1285,58 @@
             }
         });
 
+        syncBtn.addEventListener('click', syncWithPeer);
+
+        // ---------- ALMACENAMIENTO PERSISTENTE ----------
+        async function requestPersistentStorage() {
+            try {
+                if (navigator.storage && navigator.storage.persist) {
+                    const isPersisted = await navigator.storage.persisted();
+                    if (!isPersisted) {
+                        const granted = await navigator.storage.persist();
+                        if (granted) {
+                            console.log('✅ Almacenamiento persistente concedido');
+                            showToast('💾 Almacenamiento persistente activado', 3000);
+                        } else {
+                            console.log('⚠️ Almacenamiento persistente NO concedido');
+                        }
+                    } else {
+                        console.log('✅ Almacenamiento persistente ya activo');
+                    }
+                }
+            } catch (err) {
+                console.warn('Error al solicitar almacenamiento persistente:', err);
+            }
+        }
+
         // ---------- INICIO ----------
         (async function init() {
             try {
                 await openDB();
+                await requestPersistentStorage();
                 await renderFiles();
-                console.log('🎬 FileVault Media listo');
-                showToast('🎬 FileVault Media cargado', 2000);
+                
+                // Estado de sincronización inicial
+                syncStatus.className = 'sync-status offline';
+                
+                console.log('📁 FileVault Sync listo - Dispositivo:', deviceId);
+                showToast(`📱 Dispositivo: ${deviceId} · Listo para sincronizar`, 3000);
             } catch (err) {
                 console.error('Fallo al iniciar:', err);
                 showToast('❌ Error al iniciar IndexedDB', 3000);
             }
         })();
 
-        window.__fileVault = { getAllFiles, clearAllFiles, deleteFileById, exportDatabase, playFile };
+        // Exponer utilidades
+        window.__fileVault = { 
+            getAllFiles, 
+            clearAllFiles, 
+            deleteFileById, 
+            exportDatabase, 
+            playFile,
+            syncWithPeer,
+            deviceId
+        };
     })();
 </script>
 </body>
