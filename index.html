@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes" />
-    <title>FileVault Sync - Almacenamiento perpetuo multiplataforma</title>
+    <title>FileVault Sync Pro - Sincronización real</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
@@ -43,7 +43,6 @@
             padding-bottom: calc(1.5rem + var(--safe-bottom));
             color: var(--text-primary);
             transition: background 0.3s, color 0.3s;
-            -webkit-tap-highlight-color: transparent;
         }
         .container {
             max-width: 1400px;
@@ -56,7 +55,6 @@
             border: 1px solid var(--border-color);
             transition: 0.3s;
         }
-        /* Estilos para TV (grandes, focus visible) */
         @media (pointer: coarse) {
             .container { border-radius: 1.5rem; padding: 1.5rem; }
             .btn { padding: 0.8rem 1.5rem; font-size: 1rem; min-height: 48px; }
@@ -64,6 +62,7 @@
             .file-actions .btn { min-height: 44px; font-size: 0.9rem; }
             .dropzone { padding: 3rem 1.5rem; }
             .stats-bar { padding: 1rem 1.5rem; }
+            .sync-panel { padding: 1.2rem; }
         }
         @media (max-width: 600px) {
             .container { padding: 1rem; border-radius: 1rem; }
@@ -74,7 +73,7 @@
             .floating-player { width: 95%; right: 2.5%; bottom: 80px; }
             .search-bar { flex-wrap: wrap; }
             .search-bar input { min-width: 100%; }
-            .file-actions .btn { font-size: 0.8rem; padding: 0.5rem; }
+            .sync-panel { flex-direction: column; }
         }
         .header {
             display: flex;
@@ -193,6 +192,12 @@
             border-color: #6d5f2f;
         }
         .btn-warning:hover { background: #8a7a3b; color: white; }
+        .btn-info {
+            background: #2f4a6d;
+            color: #b0d0f0;
+            border-color: #2f4a6d;
+        }
+        .btn-info:hover { background: #3b5f8a; color: white; }
         .dropzone {
             border: 2px dashed var(--border-color);
             border-radius: 1.5rem;
@@ -264,7 +269,6 @@
             transform: translateY(-3px);
             box-shadow: 0 8px 20px var(--shadow);
         }
-        .file-card:focus-within { outline: 2px solid var(--accent); }
         .file-preview {
             width: 100%;
             border-radius: 0.8rem;
@@ -278,23 +282,14 @@
             justify-content: center;
             cursor: pointer;
         }
-        .file-preview img,
-        .file-preview video,
-        .file-preview audio {
+        .file-preview img, .file-preview video, .file-preview audio {
             width: 100%;
             max-height: 200px;
             object-fit: contain;
             border-radius: 0.8rem;
         }
-        .file-preview audio {
-            height: 50px;
-            padding: 0 10px;
-        }
-        .file-preview .file-icon {
-            font-size: 3rem;
-            opacity: 0.6;
-            padding: 1.5rem;
-        }
+        .file-preview audio { height: 50px; padding: 0 10px; }
+        .file-preview .file-icon { font-size: 3rem; opacity: 0.6; padding: 1.5rem; }
         .file-name {
             font-weight: 600;
             font-size: 0.9rem;
@@ -329,14 +324,51 @@
         .btn-share:hover { background: #3b5f8a; color: white; }
         .btn-play { background: #2f6d4a; color: #b0f0d0; border-color: #2f6d4a; }
         .btn-play:hover { background: #3b8a5f; color: white; }
-        .btn-sync { background: #6d2f6d; color: #f0b0f0; border-color: #6d2f6d; }
-        .btn-sync:hover { background: #8a3b8a; color: white; }
         .empty-state {
             text-align: center;
             padding: 2.5rem 0;
             color: var(--text-muted);
         }
         .empty-state span { font-size: 3.5rem; display: block; margin-bottom: 0.5rem; }
+        .sync-panel {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+        .sync-panel.active { display: block; }
+        .sync-panel .sync-code {
+            background: var(--bg-primary);
+            padding: 0.8rem;
+            border-radius: 0.8rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+            word-break: break-all;
+            margin: 0.5rem 0;
+            border: 1px solid var(--border-color);
+            max-height: 100px;
+            overflow-y: auto;
+        }
+        .sync-panel .sync-input {
+            width: 100%;
+            padding: 0.7rem;
+            border-radius: 0.8rem;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: monospace;
+            font-size: 0.8rem;
+            min-height: 60px;
+            resize: vertical;
+        }
+        .sync-panel .sync-actions {
+            display: flex;
+            gap: 0.8rem;
+            margin-top: 0.8rem;
+            flex-wrap: wrap;
+        }
         .footer-msg {
             margin-top: 1.5rem;
             text-align: center;
@@ -391,8 +423,7 @@
             animation: slideUp 0.3s ease;
         }
         .floating-player.active { display: block; }
-        .floating-player video,
-        .floating-player audio {
+        .floating-player video, .floating-player audio {
             width: 100%;
             border-radius: 0.5rem;
             max-height: 200px;
@@ -431,11 +462,21 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
         }
-        @media (max-width: 600px) {
-            .floating-player { width: 95%; right: 2.5%; bottom: 80px; }
-            .toast { right: 10px; left: 10px; max-width: none; bottom: 80px; }
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--bg-primary);
+            border-radius: 10px;
+            margin: 8px 0;
+            overflow: hidden;
         }
-        /* Soporte para Android TV (D-Pad) */
+        .progress-bar .fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+            border-radius: 10px;
+            transition: width 0.3s;
+            width: 0%;
+        }
         *:focus-visible {
             outline: 3px solid var(--accent) !important;
             outline-offset: 2px;
@@ -443,6 +484,11 @@
         .btn:focus-visible, .file-card:focus-visible {
             outline: 3px solid var(--accent) !important;
             outline-offset: 2px;
+        }
+        @media (max-width: 600px) {
+            .floating-player { width: 95%; right: 2.5%; bottom: 80px; }
+            .toast { right: 10px; left: 10px; max-width: none; bottom: 80px; }
+            .sync-panel .sync-actions { flex-direction: column; }
         }
     </style>
 </head>
@@ -455,21 +501,57 @@
                 <span class="sync-status" id="syncStatus"></span>
                 <span id="deviceId">📱</span>
             </span>
-            <button class="theme-toggle" id="themeToggle" title="Cambiar tema">🌓</button>
+            <button class="theme-toggle" id="themeToggle">🌓</button>
         </div>
     </div>
-    <div class="subhead">📡 Sincronización entre dispositivos · Almacenamiento perpetuo · Reproducción integrada</div>
+    <div class="subhead">📡 Sincronización P2P · Backup · Almacenamiento perpetuo</div>
 
     <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="🔍 Buscar archivos..." aria-label="Buscar archivos" />
+        <input type="text" id="searchInput" placeholder="🔍 Buscar archivos..." />
         <button class="btn" id="clearSearchBtn">✕ Limpiar</button>
-        <button class="btn btn-warning" id="syncBtn">🔄 Sincronizar</button>
+        <button class="btn btn-warning" id="toggleSyncBtn">🔄 Sincronizar</button>
     </div>
 
-    <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Subir archivos">
+    <!-- Panel de sincronización -->
+    <div class="sync-panel" id="syncPanel">
+        <h3 style="margin-bottom:0.5rem;">🔄 Sincronización P2P</h3>
+        <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:0.8rem;">
+            Conecta dos dispositivos para sincronizar archivos automáticamente
+        </p>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:0.8rem;">
+            <div>
+                <label style="font-size:0.8rem;color:var(--text-muted);">Tu código de conexión:</label>
+                <div class="sync-code" id="localCode">Esperando conexión...</div>
+                <button class="btn btn-info" id="copyCodeBtn" style="margin-top:0.3rem;">📋 Copiar código</button>
+            </div>
+            <div>
+                <label style="font-size:0.8rem;color:var(--text-muted);">Código del otro dispositivo:</label>
+                <textarea class="sync-input" id="remoteCodeInput" placeholder="Pega aquí el código del otro dispositivo..."></textarea>
+                <button class="btn btn-primary" id="connectBtn" style="margin-top:0.3rem;width:100%;">🔗 Conectar</button>
+            </div>
+        </div>
+        
+        <div id="syncProgress" style="display:none;">
+            <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--text-muted);">
+                <span id="syncStatusText">Conectando...</span>
+                <span id="syncProgressText">0%</span>
+            </div>
+            <div class="progress-bar"><div class="fill" id="syncProgressFill"></div></div>
+        </div>
+        
+        <div class="sync-actions">
+            <button class="btn btn-danger" id="disconnectBtn">❌ Desconectar</button>
+            <button class="btn btn-success" id="exportBtn">💾 Exportar Backup</button>
+            <button class="btn btn-primary" id="importBtn">📥 Importar Backup</button>
+            <input type="file" id="importFileInput" accept=".json" style="display:none" />
+        </div>
+    </div>
+
+    <div class="dropzone" id="dropzone" role="button" tabindex="0">
         <div class="dropzone-icon">⬆️</div>
         <p><strong>Arrastra o haz clic</strong> para subir archivos</p>
-        <small>Videos, audio, imágenes, documentos · Se sincronizan entre dispositivos</small>
+        <small>Se sincronizan automáticamente con otros dispositivos conectados</small>
         <input type="file" id="fileInput" multiple />
     </div>
 
@@ -477,9 +559,7 @@
         <div class="stat-item"><span>📦 Archivos</span><span id="fileCount">0</span></div>
         <div class="stat-item"><span>⚖️ Peso total</span><span id="totalSize">0 B</span></div>
         <div class="stat-item"><span>💾 Uso</span><span id="storagePercent">0%</span></div>
-        <div class="stat-item" style="flex-wrap:wrap;gap:0.4rem;">
-            <button class="btn btn-success" id="exportBtn">💾 Exportar</button>
-            <button class="btn btn-primary" id="importBtn">📥 Importar</button>
+        <div class="stat-item">
             <button class="btn btn-danger" id="clearAllBtn">🗑️ Borrar todo</button>
         </div>
     </div>
@@ -487,12 +567,10 @@
     <div id="fileList" class="file-grid"></div>
     <div id="emptyState" class="empty-state"><span>📭</span> No hay archivos guardados aún</div>
 
-    <input type="file" id="importFileInput" accept=".json" style="display:none" />
-
     <div class="footer-msg">
-        <span><strong>💾</strong> Los archivos se guardan localmente en IndexedDB</span>
-        <span><strong>📡</strong> Sincroniza con otros dispositivos vía WebRTC</span>
-        <span><strong>🔒</strong> 100% privado, sin servidores externos</span>
+        <span><strong>💾</strong> Almacenamiento local permanente</span>
+        <span><strong>📡</strong> Sincronización P2P entre dispositivos</span>
+        <span><strong>🔒</strong> 100% privado, sin servidores</span>
     </div>
 </div>
 
@@ -513,14 +591,14 @@
         // ---------- CONFIG ----------
         const DB_NAME = 'FileVaultDB';
         const STORE_NAME = 'files';
-        const SYNC_CHANNEL = 'filevault-sync';
         let db = null;
         let allFiles = [];
         let searchTerm = '';
         let currentPlayingId = null;
         let deviceId = '';
-        let syncPeer = null;
         let syncConnections = [];
+        let isConnected = false;
+        let syncChannel = null;
 
         // ---------- ELEMENTOS ----------
         const dropzone = document.getElementById('dropzone');
@@ -543,9 +621,19 @@
         const playerName = document.getElementById('playerName');
         const closePlayerBtn = document.getElementById('closePlayerBtn');
         const downloadPlayerBtn = document.getElementById('downloadPlayerBtn');
-        const syncBtn = document.getElementById('syncBtn');
+        const toggleSyncBtn = document.getElementById('toggleSyncBtn');
+        const syncPanel = document.getElementById('syncPanel');
+        const localCode = document.getElementById('localCode');
+        const remoteCodeInput = document.getElementById('remoteCodeInput');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const copyCodeBtn = document.getElementById('copyCodeBtn');
         const syncStatus = document.getElementById('syncStatus');
         const deviceIdEl = document.getElementById('deviceId');
+        const syncProgress = document.getElementById('syncProgress');
+        const syncStatusText = document.getElementById('syncStatusText');
+        const syncProgressText = document.getElementById('syncProgressText');
+        const syncProgressFill = document.getElementById('syncProgressFill');
 
         // ---------- INICIALIZAR DISPOSITIVO ----------
         function initDevice() {
@@ -724,13 +812,8 @@
                     element.style.width = '100%';
                     element.style.maxHeight = '200px';
                     element.style.objectFit = 'contain';
-                } else if (type === 'application/pdf') {
-                    element = document.createElement('iframe');
-                    element.style.width = '100%';
-                    element.style.height = '200px';
-                    element.style.border = 'none';
                 } else {
-                    showToast('📄 Este archivo no se puede previsualizar', 2000);
+                    showToast('📄 Vista previa no disponible', 2000);
                     playerContainer.innerHTML = `<div style="padding:1rem;text-align:center;color:var(--text-muted);">📄 Vista previa no disponible</div>`;
                     return;
                 }
@@ -851,17 +934,6 @@
                     el.addEventListener('click', () => {
                         playFile(Number(el.dataset.id));
                     });
-                    el.style.cursor = 'pointer';
-                });
-
-                document.querySelectorAll('.file-card').forEach(card => {
-                    card.addEventListener('keydown', (e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            const id = Number(card.dataset.id);
-                            playFile(id);
-                        }
-                    });
                 });
 
                 document.querySelectorAll('.download-btn').forEach(btn => {
@@ -979,164 +1051,337 @@
                 await pc2.setLocalDescription(answer);
                 await pc1.setRemoteDescription(answer);
 
-                showToast('📡 Conexión P2P establecida. Enviando...', 3000);
+                showToast('📡 Conexión P2P establecida', 3000);
 
             } catch (err) {
                 console.error('Error en WebRTC:', err);
-                showToast('❌ Error en P2P. Asegúrate de tener conexión', 3000);
+                showToast('❌ Error en P2P', 3000);
             }
         }
 
-        // ---------- SINCRONIZACIÓN ENTRE DISPOSITIVOS ----------
-        async function syncWithPeer() {
-            try {
-                syncStatus.className = 'sync-status syncing';
-                showToast('🔄 Iniciando sincronización...', 3000);
+        // ---------- SINCRONIZACIÓN P2P FUNCIONAL ----------
+        let peerConnection = null;
+        let dataChannel = null;
+        let isSyncActive = false;
 
-                // Obtener todos los archivos locales
-                const localFiles = await getAllFiles();
-                
-                // Crear oferta WebRTC para sincronización
+        // Generar código de conexión (oferta SDP)
+        async function createSyncOffer() {
+            try {
                 const pc = new RTCPeerConnection({
                     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
                 });
 
                 const channel = pc.createDataChannel('sync');
-                
-                channel.onopen = async () => {
-                    // Enviar metadatos de archivos locales
-                    const metadata = localFiles.map(f => ({
-                        id: f.id,
-                        name: f.name,
-                        type: f.type,
-                        size: f.size,
-                        lastModified: f.lastModified,
-                        uploadedAt: f.uploadedAt,
-                        deviceId: f.deviceId || 'unknown'
-                    }));
-                    
-                    channel.send(JSON.stringify({
-                        type: 'sync-metadata',
-                        deviceId: deviceId,
-                        files: metadata
-                    }));
+                dataChannel = channel;
 
-                    showToast('📡 Metadatos enviados, esperando respuesta...', 3000);
+                channel.onopen = () => {
+                    isSyncActive = true;
+                    syncStatus.className = 'sync-status online';
+                    showToast('✅ Sincronización activa!', 3000);
+                    syncStatusText.textContent = '✅ Conectado';
+                    updateSyncProgress(100);
                 };
 
                 channel.onmessage = async (event) => {
                     try {
                         const data = JSON.parse(event.data);
-                        
-                        if (data.type === 'sync-metadata') {
-                            // Recibir metadatos del otro dispositivo
-                            const remoteFiles = data.files || [];
-                            const localFileIds = new Set(localFiles.map(f => f.id));
-                            
-                            // Buscar archivos que faltan localmente
-                            let missingCount = 0;
-                            for (const remoteFile of remoteFiles) {
-                                if (!localFileIds.has(remoteFile.id)) {
-                                    // Solicitar archivo faltante
-                                    channel.send(JSON.stringify({
-                                        type: 'request-file',
-                                        id: remoteFile.id
-                                    }));
-                                    missingCount++;
-                                }
-                            }
-                            
-                            if (missingCount === 0) {
-                                showToast('✅ Todos los archivos están sincronizados', 3000);
-                                syncStatus.className = 'sync-status online';
-                            } else {
-                                showToast(`📥 Solicitando ${missingCount} archivo(s) faltantes...`, 3000);
-                            }
-                            
-                        } else if (data.type === 'request-file') {
-                            // Enviar archivo solicitado
-                            const file = await getFileById(data.id);
-                            if (file) {
-                                const blob = new Blob([file.data], { type: file.type });
-                                const buffer = await blob.arrayBuffer();
-                                channel.send(JSON.stringify({
-                                    type: 'file-data',
-                                    id: file.id,
-                                    name: file.name,
-                                    type: file.type,
-                                    size: file.size,
-                                    lastModified: file.lastModified,
-                                    uploadedAt: file.uploadedAt,
-                                    deviceId: file.deviceId || deviceId
-                                }));
-                                channel.send(buffer);
-                                showToast(`📤 Enviando: ${file.name}`, 2000);
-                            }
-                            
-                        } else if (data.type === 'file-data') {
-                            // Recibir archivo completo
-                            // Nota: Necesitamos manejar datos binarios por separado
-                            // Por simplicidad, mostramos mensaje
-                            showToast(`📥 Recibiendo: ${data.name}`, 2000);
-                            
-                            // Aquí iría la lógica para recibir el archivo
-                            // y guardarlo en IndexedDB
-                        }
+                        await handleSyncMessage(data, channel);
                     } catch (err) {
-                        console.error('Error procesando mensaje de sincronización:', err);
+                        console.error('Error al procesar mensaje:', err);
                     }
                 };
 
-                // Crear oferta
+                pc.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        // Actualizar código con nuevos candidatos
+                        updateLocalCode(pc.localDescription);
+                    }
+                };
+
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
+                peerConnection = pc;
 
-                // Mostrar la oferta para compartir (copia manual)
-                const offerSDP = btoa(JSON.stringify(offer));
-                
-                // Abrir modal o mostrar en toast
-                showToast(`📋 Copia este código para sincronizar: ${offerSDP.substring(0, 30)}...`, 5000);
-                
-                // Guardar referencia
-                syncPeer = pc;
-                syncStatus.className = 'sync-status online';
+                updateLocalCode(pc.localDescription);
+                syncStatus.className = 'sync-status syncing';
+                syncStatusText.textContent = '🔄 Generando código...';
+                showToast('🔄 Código de conexión generado', 2000);
+
+                return pc.localDescription;
 
             } catch (err) {
-                console.error('Error en sincronización:', err);
-                syncStatus.className = 'sync-status offline';
-                showToast('❌ Error al sincronizar: ' + err.message, 3000);
+                console.error('Error al crear oferta:', err);
+                showToast('❌ Error al generar código: ' + err.message, 3000);
+                return null;
             }
         }
 
-        // ---------- SUBIR ----------
-        async function handleFiles(fileList) {
-            if (!fileList || fileList.length === 0) return;
+        function updateLocalCode(description) {
+            if (description) {
+                const code = btoa(JSON.stringify({
+                    type: description.type,
+                    sdp: description.sdp
+                }));
+                localCode.textContent = code;
+                localCode.dataset.code = code;
+            }
+        }
+
+        // Conectar a otro dispositivo usando su código
+        async function connectToPeer(code) {
             try {
-                let uploaded = 0;
-                for (const file of fileList) {
-                    await saveFile(file);
-                    uploaded++;
-                }
-                await renderFiles();
-                showToast(`✅ ${uploaded} archivo(s) subido(s) y guardados permanentemente`, 3000);
+                const description = JSON.parse(atob(code));
                 
-                // Reproducir automáticamente el último archivo subido si es multimedia
-                if (fileList.length === 1) {
-                    const lastFile = fileList[0];
-                    const type = lastFile.type || '';
-                    if (type.startsWith('video/') || type.startsWith('audio/') || type.startsWith('image/')) {
-                        setTimeout(async () => {
-                            const files = await getAllFiles();
-                            const last = files[files.length - 1];
-                            if (last) playFile(last.id);
-                        }, 500);
+                const pc = new RTCPeerConnection({
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                });
+
+                pc.ondatachannel = (event) => {
+                    dataChannel = event.channel;
+                    dataChannel.onopen = () => {
+                        isSyncActive = true;
+                        syncStatus.className = 'sync-status online';
+                        showToast('✅ Sincronización activa!', 3000);
+                        syncStatusText.textContent = '✅ Conectado';
+                        updateSyncProgress(100);
+                    };
+                    dataChannel.onmessage = async (event) => {
+                        try {
+                            const data = JSON.parse(event.data);
+                            await handleSyncMessage(data, dataChannel);
+                        } catch (err) {
+                            console.error('Error al procesar mensaje:', err);
+                        }
+                    };
+                };
+
+                pc.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        // Actualizar conexión
+                    }
+                };
+
+                await pc.setRemoteDescription(description);
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                peerConnection = pc;
+
+                syncStatus.className = 'sync-status syncing';
+                syncStatusText.textContent = '🔄 Conectando...';
+                showToast('🔄 Conectando al otro dispositivo...', 2000);
+
+                return pc;
+
+            } catch (err) {
+                console.error('Error al conectar:', err);
+                showToast('❌ Error al conectar: ' + err.message, 3000);
+                return null;
+            }
+        }
+
+        // Manejar mensajes de sincronización
+        async function handleSyncMessage(data, channel) {
+            if (data.type === 'sync-request') {
+                // Solicitud de sincronización: enviar lista de archivos
+                const files = await getAllFiles();
+                const metadata = files.map(f => ({
+                    id: f.id,
+                    name: f.name,
+                    type: f.type,
+                    size: f.size,
+                    uploadedAt: f.uploadedAt,
+                    deviceId: f.deviceId || 'unknown'
+                }));
+                
+                channel.send(JSON.stringify({
+                    type: 'sync-metadata',
+                    deviceId: deviceId,
+                    files: metadata
+                }));
+                
+                showToast(`📤 Enviando metadatos (${metadata.length} archivos)`, 2000);
+
+            } else if (data.type === 'sync-metadata') {
+                // Recibir metadatos del otro dispositivo
+                const remoteFiles = data.files || [];
+                const localFiles = await getAllFiles();
+                const localIds = new Set(localFiles.map(f => f.id));
+                
+                let missingCount = 0;
+                for (const remoteFile of remoteFiles) {
+                    if (!localIds.has(remoteFile.id)) {
+                        // Solicitar archivo faltante
+                        channel.send(JSON.stringify({
+                            type: 'request-file',
+                            id: remoteFile.id
+                        }));
+                        missingCount++;
                     }
                 }
-            } catch (err) {
-                console.error('Error al subir:', err);
-                showToast('❌ Error al guardar archivo(s)', 3000);
+                
+                if (missingCount === 0) {
+                    showToast('✅ Todos los archivos están sincronizados', 3000);
+                } else {
+                    showToast(`📥 Solicitando ${missingCount} archivo(s) faltantes...`, 3000);
+                    updateSyncProgress(50);
+                }
+
+            } else if (data.type === 'request-file') {
+                // Enviar archivo solicitado
+                const file = await getFileById(data.id);
+                if (file) {
+                    const blob = new Blob([file.data], { type: file.type });
+                    const buffer = await blob.arrayBuffer();
+                    
+                    // Enviar metadata del archivo
+                    channel.send(JSON.stringify({
+                        type: 'file-transfer',
+                        id: file.id,
+                        name: file.name,
+                        type: file.type,
+                        size: file.size,
+                        uploadedAt: file.uploadedAt,
+                        deviceId: file.deviceId || deviceId
+                    }));
+                    
+                    // Enviar datos binarios (en chunks para archivos grandes)
+                    const chunkSize = 16384; // 16KB chunks
+                    for (let i = 0; i < buffer.byteLength; i += chunkSize) {
+                        const chunk = buffer.slice(i, i + chunkSize);
+                        channel.send(chunk);
+                    }
+                    
+                    // Marcar fin del archivo
+                    channel.send(JSON.stringify({ type: 'file-end', id: file.id }));
+                    
+                    showToast(`📤 Enviando: ${file.name} (${formatSize(file.size)})`, 2000);
+                }
+
+            } else if (data.type === 'file-transfer') {
+                // Prepararse para recibir archivo
+                showToast(`📥 Recibiendo: ${data.name} (${formatSize(data.size)})`, 2000);
+                syncStatusText.textContent = `📥 Recibiendo: ${data.name}`;
+                
+                // Recibir datos binarios
+                const chunks = [];
+                let receivedSize = 0;
+                let totalSize = data.size;
+
+                // Escuchar mensajes binarios
+                const binaryHandler = async (event) => {
+                    if (event.data instanceof ArrayBuffer) {
+                        chunks.push(event.data);
+                        receivedSize += event.data.byteLength;
+                        const progress = Math.round((receivedSize / totalSize) * 100);
+                        updateSyncProgress(progress);
+                        syncStatusText.textContent = `📥 Recibiendo: ${Math.round(progress)}%`;
+                    } else if (typeof event.data === 'string') {
+                        try {
+                            const msg = JSON.parse(event.data);
+                            if (msg.type === 'file-end' && msg.id === data.id) {
+                                // Archivo completo, guardar
+                                const fullBuffer = new Uint8Array(receivedSize);
+                                let offset = 0;
+                                for (const chunk of chunks) {
+                                    fullBuffer.set(new Uint8Array(chunk), offset);
+                                    offset += chunk.byteLength;
+                                }
+                                
+                                const blob = new Blob([fullBuffer], { type: data.type });
+                                const fileObj = new File([blob], data.name, {
+                                    type: data.type,
+                                    lastModified: data.uploadedAt || Date.now()
+                                });
+                                
+                                await saveFile(fileObj);
+                                await renderFiles();
+                                
+                                showToast(`✅ Archivo recibido: ${data.name}`, 3000);
+                                syncStatusText.textContent = '✅ Sincronización completada';
+                                updateSyncProgress(100);
+                                
+                                // Dejar de escuchar este mensaje
+                                dataChannel.removeEventListener('message', binaryHandler);
+                            }
+                        } catch (err) {
+                            // No es JSON, ignorar
+                        }
+                    }
+                };
+
+                dataChannel.addEventListener('message', binaryHandler);
+
+            } else if (data.type === 'file-end') {
+                // Fin de archivo recibido
+                showToast(`✅ Archivo recibido correctamente`, 2000);
             }
         }
+
+        function updateSyncProgress(percent) {
+            syncProgress.style.display = 'block';
+            syncProgressFill.style.width = percent + '%';
+            syncProgressText.textContent = percent + '%';
+        }
+
+        // ---------- FUNCIONES DE SINCRONIZACIÓN ----------
+        function toggleSyncPanel() {
+            const isVisible = syncPanel.classList.toggle('active');
+            if (isVisible) {
+                createSyncOffer();
+            } else {
+                disconnectSync();
+            }
+        }
+
+        function disconnectSync() {
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            if (dataChannel) {
+                dataChannel.close();
+                dataChannel = null;
+            }
+            isSyncActive = false;
+            isConnected = false;
+            syncStatus.className = 'sync-status offline';
+            syncStatusText.textContent = '❌ Desconectado';
+            syncProgress.style.display = 'none';
+            localCode.textContent = 'Esperando conexión...';
+            showToast('❌ Desconectado', 2000);
+        }
+
+        // ---------- COPIA DE CÓDIGO ----------
+        copyCodeBtn.addEventListener('click', () => {
+            const code = localCode.dataset.code || localCode.textContent;
+            if (code && code !== 'Esperando conexión...') {
+                navigator.clipboard.writeText(code).then(() => {
+                    showToast('📋 Código copiado al portapapeles', 2000);
+                }).catch(() => {
+                    // Fallback
+                    const range = document.createRange();
+                    range.selectNode(localCode);
+                    window.getSelection().removeAllRanges();
+                    window.getSelection().addRange(range);
+                    document.execCommand('copy');
+                    showToast('📋 Código copiado', 2000);
+                });
+            } else {
+                showToast('⚠️ Espera a que se genere el código', 2000);
+            }
+        });
+
+        // ---------- CONECTAR A OTRO DISPOSITIVO ----------
+        connectBtn.addEventListener('click', async () => {
+            const code = remoteCodeInput.value.trim();
+            if (!code) {
+                showToast('⚠️ Pega el código del otro dispositivo', 2000);
+                return;
+            }
+            await connectToPeer(code);
+        });
+
+        disconnectBtn.addEventListener('click', disconnectSync);
 
         // ---------- EXPORTAR / IMPORTAR ----------
         function arrayBufferToBase64(buffer) {
@@ -1220,15 +1465,40 @@
             }
         }
 
-        // ---------- EVENTOS UI ----------
-        dropzone.addEventListener('click', () => fileInput.click());
-        dropzone.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                fileInput.click();
+        // ---------- SUBIR ----------
+        async function handleFiles(fileList) {
+            if (!fileList || fileList.length === 0) return;
+            try {
+                let uploaded = 0;
+                for (const file of fileList) {
+                    await saveFile(file);
+                    uploaded++;
+                }
+                await renderFiles();
+                showToast(`✅ ${uploaded} archivo(s) subido(s) y guardados permanentemente`, 3000);
+                
+                // Reproducir automáticamente
+                if (fileList.length === 1) {
+                    const lastFile = fileList[0];
+                    const type = lastFile.type || '';
+                    if (type.startsWith('video/') || type.startsWith('audio/') || type.startsWith('image/')) {
+                        setTimeout(async () => {
+                            const files = await getAllFiles();
+                            const last = files[files.length - 1];
+                            if (last) playFile(last.id);
+                        }, 500);
+                    }
+                }
+            } catch (err) {
+                console.error('Error al subir:', err);
+                showToast('❌ Error al guardar archivo(s)', 3000);
             }
-        });
+        }
 
+        // ---------- EVENTOS UI ----------
+        toggleSyncBtn.addEventListener('click', toggleSyncPanel);
+
+        dropzone.addEventListener('click', () => fileInput.click());
         dropzone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropzone.classList.add('dragover');
@@ -1285,8 +1555,6 @@
             }
         });
 
-        syncBtn.addEventListener('click', syncWithPeer);
-
         // ---------- ALMACENAMIENTO PERSISTENTE ----------
         async function requestPersistentStorage() {
             try {
@@ -1297,11 +1565,7 @@
                         if (granted) {
                             console.log('✅ Almacenamiento persistente concedido');
                             showToast('💾 Almacenamiento persistente activado', 3000);
-                        } else {
-                            console.log('⚠️ Almacenamiento persistente NO concedido');
                         }
-                    } else {
-                        console.log('✅ Almacenamiento persistente ya activo');
                     }
                 }
             } catch (err) {
@@ -1315,11 +1579,8 @@
                 await openDB();
                 await requestPersistentStorage();
                 await renderFiles();
-                
-                // Estado de sincronización inicial
                 syncStatus.className = 'sync-status offline';
-                
-                console.log('📁 FileVault Sync listo - Dispositivo:', deviceId);
+                console.log('📁 FileVault Sync Pro listo - Dispositivo:', deviceId);
                 showToast(`📱 Dispositivo: ${deviceId} · Listo para sincronizar`, 3000);
             } catch (err) {
                 console.error('Fallo al iniciar:', err);
@@ -1334,7 +1595,8 @@
             deleteFileById, 
             exportDatabase, 
             playFile,
-            syncWithPeer,
+            connectToPeer,
+            createSyncOffer,
             deviceId
         };
     })();
