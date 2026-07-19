@@ -1,1605 +1,395 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes" />
-    <title>FileVault Sync Pro - Sincronización real</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Servidor de archivos</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        :root {
-            --bg-primary: #0b0f1a;
-            --bg-secondary: #1a1f2e;
-            --bg-card: #161c2b;
-            --bg-input: #1e243a;
-            --text-primary: #e0e4f0;
-            --text-secondary: #8e97b0;
-            --text-muted: #6d7796;
-            --border-color: #2d3448;
-            --accent: #b388ff;
-            --accent-secondary: #82b1ff;
-            --shadow: rgba(0,0,0,0.7);
-            --card-hover: #2a3148;
-            --safe-bottom: env(safe-area-inset-bottom, 0px);
-        }
-        [data-theme="light"] {
-            --bg-primary: #f0f2f8;
-            --bg-secondary: #ffffff;
-            --bg-card: #ffffff;
-            --bg-input: #e8ecf5;
-            --text-primary: #1a1f2e;
-            --text-secondary: #4a5370;
-            --text-muted: #7b85a6;
-            --border-color: #d0d6ec;
-            --shadow: rgba(0,0,0,0.1);
-            --card-hover: #e8ecf5;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            background: var(--bg-primary);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
-            padding: 1.5rem 1rem;
-            padding-bottom: calc(1.5rem + var(--safe-bottom));
-            color: var(--text-primary);
-            transition: background 0.3s, color 0.3s;
+            align-items: center;
+            padding: 20px;
         }
         .container {
-            max-width: 1400px;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
             width: 100%;
-            background: var(--bg-secondary);
-            backdrop-filter: blur(12px);
-            border-radius: 2.5rem;
-            padding: 2rem;
-            box-shadow: 0 20px 60px var(--shadow);
-            border: 1px solid var(--border-color);
-            transition: 0.3s;
-        }
-        @media (pointer: coarse) {
-            .container { border-radius: 1.5rem; padding: 1.5rem; }
-            .btn { padding: 0.8rem 1.5rem; font-size: 1rem; min-height: 48px; }
-            .file-card { padding: 1.2rem; }
-            .file-actions .btn { min-height: 44px; font-size: 0.9rem; }
-            .dropzone { padding: 3rem 1.5rem; }
-            .stats-bar { padding: 1rem 1.5rem; }
-            .sync-panel { padding: 1.2rem; }
-        }
-        @media (max-width: 600px) {
-            .container { padding: 1rem; border-radius: 1rem; }
-            h1 { font-size: 1.8rem; }
-            .header { flex-direction: column; align-items: stretch; gap: 0.5rem; }
-            .stats-bar { flex-direction: column; align-items: stretch; gap: 0.4rem; }
-            .file-grid { grid-template-columns: 1fr; }
-            .floating-player { width: 95%; right: 2.5%; bottom: 80px; }
-            .search-bar { flex-wrap: wrap; }
-            .search-bar input { min-width: 100%; }
-            .sync-panel { flex-direction: column; }
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin-bottom: 0.5rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
         h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            background: linear-gradient(to right, var(--accent), var(--accent-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-        }
-        .header-controls {
-            display: flex;
-            gap: 0.8rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .theme-toggle {
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 0.5rem 1rem;
-            border-radius: 2rem;
-            cursor: pointer;
-            font-size: 1.2rem;
-            transition: 0.2s;
-            min-height: 44px;
-            min-width: 44px;
-        }
-        .theme-toggle:hover, .theme-toggle:focus {
-            background: var(--card-hover);
-            outline: 2px solid var(--accent);
-        }
-        .subhead {
-            color: var(--text-secondary);
-            margin-bottom: 1.5rem;
-            border-left: 3px solid var(--accent);
-            padding-left: 1rem;
-            font-size: 0.95rem;
-        }
-        .search-bar {
-            display: flex;
-            gap: 0.8rem;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-        }
-        .search-bar input {
-            flex: 1;
-            min-width: 200px;
-            padding: 0.7rem 1.2rem;
-            border-radius: 2rem;
-            border: 1px solid var(--border-color);
-            background: var(--bg-input);
-            color: var(--text-primary);
-            font-size: 0.95rem;
-            transition: 0.2s;
-            min-height: 48px;
-        }
-        .search-bar input:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(179, 136, 255, 0.15);
-        }
-        .btn {
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 0.5rem 1.2rem;
-            border-radius: 2rem;
-            font-size: 0.85rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: 0.15s;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            white-space: nowrap;
-            min-height: 40px;
-            touch-action: manipulation;
-        }
-        .btn:hover, .btn:focus {
-            background: var(--card-hover);
-            transform: translateY(-1px);
-            outline: 2px solid var(--accent);
-        }
-        .btn:active { transform: scale(0.97); }
-        .btn-primary {
-            background: var(--accent);
-            color: #0b0f1a;
-            border-color: var(--accent);
-        }
-        .btn-primary:hover { background: #a07ae0; border-color: #a07ae0; }
-        .btn-danger {
-            background: #4a2f3f;
-            color: #f0b0b0;
-            border-color: #4a2f3f;
-        }
-        .btn-danger:hover { background: #6d3b4f; color: white; }
-        .btn-success {
-            background: #2f4a3f;
-            color: #b0f0d0;
-            border-color: #2f4a3f;
-        }
-        .btn-success:hover { background: #3b6d4f; color: white; }
-        .btn-warning {
-            background: #6d5f2f;
-            color: #f0e0b0;
-            border-color: #6d5f2f;
-        }
-        .btn-warning:hover { background: #8a7a3b; color: white; }
-        .btn-info {
-            background: #2f4a6d;
-            color: #b0d0f0;
-            border-color: #2f4a6d;
-        }
-        .btn-info:hover { background: #3b5f8a; color: white; }
-        .dropzone {
-            border: 2px dashed var(--border-color);
-            border-radius: 1.5rem;
-            padding: 2.5rem 1.5rem;
+            color: #333;
+            margin-bottom: 30px;
             text-align: center;
-            background: rgba(255,255,255,0.02);
-            transition: 0.25s ease;
+        }
+        .upload-box {
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
             cursor: pointer;
-            margin-bottom: 1.5rem;
-            min-height: 180px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            transition: all 0.3s;
+            margin-bottom: 20px;
         }
-        .dropzone:hover, .dropzone.dragover {
-            border-color: var(--accent);
-            background: rgba(179, 136, 255, 0.06);
-            transform: scale(1.01);
+        .upload-box:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
         }
-        .dropzone-icon { font-size: 3rem; margin-bottom: 0.3rem; }
-        .dropzone p { font-size: 1.1rem; color: var(--text-secondary); }
-        .dropzone small { color: var(--text-muted); display: block; margin-top: 0.4rem; }
-        input[type="file"] { display: none; }
-        .stats-bar {
+        .upload-box.dragover {
+            border-color: #667eea;
+            background: #e8ebff;
+            transform: scale(1.02);
+        }
+        .file-item {
+            background: #f5f5f5;
+            padding: 12px 15px;
+            margin: 8px 0;
+            border-radius: 10px;
             display: flex;
             justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 0.8rem;
-            background: var(--bg-input);
-            padding: 0.8rem 1.5rem;
-            border-radius: 3rem;
-            margin-bottom: 1.5rem;
-            border: 1px solid var(--border-color);
+            align-items: center;
+            animation: slideIn 0.3s ease;
         }
-        .stat-item {
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .file-info {
             display: flex;
             align-items: center;
-            gap: 0.6rem;
-            font-size: 0.9rem;
-            flex-wrap: wrap;
+            gap: 10px;
         }
-        .stat-item span:first-child { color: var(--text-secondary); }
-        .stat-item span:last-child {
-            font-weight: 600;
-            background: var(--bg-secondary);
-            padding: 0.15rem 0.8rem;
-            border-radius: 2rem;
-            font-size: 0.85rem;
+        .file-size {
+            font-size: 0.8em;
+            color: #666;
         }
-        .file-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.2rem;
-            margin-top: 1rem;
-        }
-        .file-card {
-            background: var(--bg-card);
-            border-radius: 1.5rem;
-            padding: 1rem;
-            border: 1px solid var(--border-color);
-            transition: 0.3s;
-            display: flex;
-            flex-direction: column;
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
             cursor: pointer;
-        }
-        .file-card:hover, .file-card:focus-within {
-            border-color: var(--accent);
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px var(--shadow);
-        }
-        .file-preview {
+            font-size: 16px;
+            transition: all 0.3s;
             width: 100%;
-            border-radius: 0.8rem;
-            margin-bottom: 0.8rem;
-            background: var(--bg-primary);
-            overflow: hidden;
-            position: relative;
-            min-height: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
+            margin-top: 10px;
         }
-        .file-preview img, .file-preview video, .file-preview audio {
-            width: 100%;
-            max-height: 200px;
-            object-fit: contain;
-            border-radius: 0.8rem;
+        .btn:hover {
+            background: #5a6fd6;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
-        .file-preview audio { height: 50px; padding: 0 10px; }
-        .file-preview .file-icon { font-size: 3rem; opacity: 0.6; padding: 1.5rem; }
-        .file-name {
-            font-weight: 600;
-            font-size: 0.9rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            color: var(--text-primary);
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
-        .file-meta {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            margin: 0.3rem 0 0.6rem;
-        }
-        .file-actions {
-            display: flex;
-            gap: 0.4rem;
-            margin-top: auto;
-            flex-wrap: wrap;
-        }
-        .file-actions .btn {
-            flex: 1;
-            justify-content: center;
-            font-size: 0.7rem;
-            padding: 0.3rem 0.6rem;
-            min-height: 36px;
-        }
-        .btn-download { background: #4a3f7a; color: white; border-color: #4a3f7a; }
-        .btn-download:hover { background: #5f51a0; }
-        .btn-delete { background: #4a2f3f; color: #f0b0b0; border-color: #4a2f3f; }
-        .btn-delete:hover { background: #6d3b4f; color: white; }
-        .btn-share { background: #2f4a6d; color: #b0d0f0; border-color: #2f4a6d; }
-        .btn-share:hover { background: #3b5f8a; color: white; }
-        .btn-play { background: #2f6d4a; color: #b0f0d0; border-color: #2f6d4a; }
-        .btn-play:hover { background: #3b8a5f; color: white; }
-        .empty-state {
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
             text-align: center;
-            padding: 2.5rem 0;
-            color: var(--text-muted);
-        }
-        .empty-state span { font-size: 3.5rem; display: block; margin-bottom: 0.5rem; }
-        .sync-panel {
-            background: var(--bg-input);
-            border: 1px solid var(--border-color);
-            border-radius: 1.5rem;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
             display: none;
         }
-        .sync-panel.active { display: block; }
-        .sync-panel .sync-code {
-            background: var(--bg-primary);
-            padding: 0.8rem;
-            border-radius: 0.8rem;
-            font-family: monospace;
-            font-size: 0.8rem;
-            word-break: break-all;
-            margin: 0.5rem 0;
-            border: 1px solid var(--border-color);
-            max-height: 100px;
-            overflow-y: auto;
+        .status.success {
+            display: block;
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
         }
-        .sync-panel .sync-input {
-            width: 100%;
-            padding: 0.7rem;
-            border-radius: 0.8rem;
-            border: 1px solid var(--border-color);
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            font-family: monospace;
-            font-size: 0.8rem;
-            min-height: 60px;
-            resize: vertical;
+        .status.error {
+            display: block;
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
-        .sync-panel .sync-actions {
-            display: flex;
-            gap: 0.8rem;
-            margin-top: 0.8rem;
-            flex-wrap: wrap;
-        }
-        .footer-msg {
-            margin-top: 1.5rem;
-            text-align: center;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            border-top: 1px solid var(--border-color);
-            padding-top: 1.5rem;
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-        .footer-msg strong { color: var(--accent); }
-        .footer-msg .badge {
-            background: var(--bg-input);
-            padding: 0.2rem 0.8rem;
-            border-radius: 2rem;
-            border: 1px solid var(--border-color);
-        }
-        .toast {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            padding: 1rem 1.5rem;
-            border-radius: 1rem;
-            box-shadow: 0 10px 30px var(--shadow);
-            color: var(--text-primary);
-            max-width: 350px;
-            z-index: 999;
-            animation: slideUp 0.3s ease;
-            border-left: 4px solid var(--accent);
-        }
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .toast.hidden { display: none; }
-        .floating-player {
-            position: fixed;
-            bottom: 100px;
-            right: 20px;
-            width: 320px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 1rem;
-            padding: 0.8rem;
-            box-shadow: 0 10px 40px var(--shadow);
-            z-index: 999;
-            display: none;
-            animation: slideUp 0.3s ease;
-        }
-        .floating-player.active { display: block; }
-        .floating-player video, .floating-player audio {
-            width: 100%;
-            border-radius: 0.5rem;
-            max-height: 200px;
-        }
-        .floating-player audio { height: 40px; }
-        .floating-player .player-controls {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .floating-player .player-controls .btn {
-            padding: 0.3rem 0.8rem;
-            font-size: 0.7rem;
-            min-height: 32px;
-        }
-        .floating-player .player-name {
-            font-size: 0.8rem;
-            margin-bottom: 0.3rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .sync-status {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 5px;
-        }
-        .sync-status.online { background: #4caf50; }
-        .sync-status.offline { background: #f44336; }
-        .sync-status.syncing { background: #ff9800; animation: pulse 1s infinite; }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+        .status.info {
+            display: block;
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
         }
         .progress-bar {
             width: 100%;
-            height: 6px;
-            background: var(--bg-primary);
+            height: 20px;
+            background: #f0f0f0;
             border-radius: 10px;
-            margin: 8px 0;
             overflow: hidden;
+            margin: 10px 0;
+            display: none;
         }
-        .progress-bar .fill {
+        .progress-bar.active {
+            display: block;
+        }
+        .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
-            border-radius: 10px;
-            transition: width 0.3s;
+            background: linear-gradient(90deg, #667eea, #764ba2);
             width: 0%;
+            transition: width 0.3s;
+            border-radius: 10px;
         }
-        *:focus-visible {
-            outline: 3px solid var(--accent) !important;
-            outline-offset: 2px;
+        .delete-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
         }
-        .btn:focus-visible, .file-card:focus-visible {
-            outline: 3px solid var(--accent) !important;
-            outline-offset: 2px;
+        .delete-btn:hover {
+            background: #ff5252;
         }
-        @media (max-width: 600px) {
-            .floating-player { width: 95%; right: 2.5%; bottom: 80px; }
-            .toast { right: 10px; left: 10px; max-width: none; bottom: 80px; }
-            .sync-panel .sync-actions { flex-direction: column; }
+        .url-info {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .url-info code {
+            background: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            word-break: break-all;
+        }
+        .copy-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 12px;
+        }
+        .copy-btn:hover {
+            background: #218838;
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <h1>📁 FileVault Sync</h1>
-        <div class="header-controls">
-            <span class="badge" style="display:flex;align-items:center;gap:5px;background:var(--bg-input);padding:0.3rem 1rem;border-radius:2rem;border:1px solid var(--border-color);">
-                <span class="sync-status" id="syncStatus"></span>
-                <span id="deviceId">📱</span>
-            </span>
-            <button class="theme-toggle" id="themeToggle">🌓</button>
-        </div>
-    </div>
-    <div class="subhead">📡 Sincronización P2P · Backup · Almacenamiento perpetuo</div>
+    <div class="container">
+        <h1>📤 Enviar archivos al móvil</h1>
 
-    <div class="search-bar">
-        <input type="text" id="searchInput" placeholder="🔍 Buscar archivos..." />
-        <button class="btn" id="clearSearchBtn">✕ Limpiar</button>
-        <button class="btn btn-warning" id="toggleSyncBtn">🔄 Sincronizar</button>
-    </div>
-
-    <!-- Panel de sincronización -->
-    <div class="sync-panel" id="syncPanel">
-        <h3 style="margin-bottom:0.5rem;">🔄 Sincronización P2P</h3>
-        <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:0.8rem;">
-            Conecta dos dispositivos para sincronizar archivos automáticamente
-        </p>
-        
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:0.8rem;">
-            <div>
-                <label style="font-size:0.8rem;color:var(--text-muted);">Tu código de conexión:</label>
-                <div class="sync-code" id="localCode">Esperando conexión...</div>
-                <button class="btn btn-info" id="copyCodeBtn" style="margin-top:0.3rem;">📋 Copiar código</button>
-            </div>
-            <div>
-                <label style="font-size:0.8rem;color:var(--text-muted);">Código del otro dispositivo:</label>
-                <textarea class="sync-input" id="remoteCodeInput" placeholder="Pega aquí el código del otro dispositivo..."></textarea>
-                <button class="btn btn-primary" id="connectBtn" style="margin-top:0.3rem;width:100%;">🔗 Conectar</button>
+        <div class="url-info">
+            <p style="margin-bottom: 10px; color: #666;">📱 Escanea este QR o accede a:</p>
+            <code id="pageUrl">Cargando...</code>
+            <button class="copy-btn" onclick="copyUrl()">Copiar</button>
+            <div style="margin: 15px auto; width: 150px; height: 150px; background: #eee; display: flex; align-items: center; justify-content: center; border-radius: 10px;">
+                <span style="font-size: 0.8em; color: #666;">[QR Code]</span>
             </div>
         </div>
-        
-        <div id="syncProgress" style="display:none;">
-            <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--text-muted);">
-                <span id="syncStatusText">Conectando...</span>
-                <span id="syncProgressText">0%</span>
-            </div>
-            <div class="progress-bar"><div class="fill" id="syncProgressFill"></div></div>
+
+        <div class="upload-box" id="dropZone">
+            <div style="font-size: 48px; margin-bottom: 10px;">📁</div>
+            <p><strong>Arrastra archivos aquí</strong></p>
+            <p style="color: #666; font-size: 0.9em;">o haz clic para seleccionar</p>
+            <input type="file" id="fileInput" multiple style="display: none;">
         </div>
-        
-        <div class="sync-actions">
-            <button class="btn btn-danger" id="disconnectBtn">❌ Desconectar</button>
-            <button class="btn btn-success" id="exportBtn">💾 Exportar Backup</button>
-            <button class="btn btn-primary" id="importBtn">📥 Importar Backup</button>
-            <input type="file" id="importFileInput" accept=".json" style="display:none" />
+
+        <div id="fileList"></div>
+
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill"></div>
         </div>
+
+        <button class="btn" id="sendBtn" onclick="sendFiles()" disabled>
+            📤 Enviar archivos
+        </button>
+
+        <div id="status" class="status"></div>
     </div>
 
-    <div class="dropzone" id="dropzone" role="button" tabindex="0">
-        <div class="dropzone-icon">⬆️</div>
-        <p><strong>Arrastra o haz clic</strong> para subir archivos</p>
-        <small>Se sincronizan automáticamente con otros dispositivos conectados</small>
-        <input type="file" id="fileInput" multiple />
-    </div>
-
-    <div class="stats-bar">
-        <div class="stat-item"><span>📦 Archivos</span><span id="fileCount">0</span></div>
-        <div class="stat-item"><span>⚖️ Peso total</span><span id="totalSize">0 B</span></div>
-        <div class="stat-item"><span>💾 Uso</span><span id="storagePercent">0%</span></div>
-        <div class="stat-item">
-            <button class="btn btn-danger" id="clearAllBtn">🗑️ Borrar todo</button>
-        </div>
-    </div>
-
-    <div id="fileList" class="file-grid"></div>
-    <div id="emptyState" class="empty-state"><span>📭</span> No hay archivos guardados aún</div>
-
-    <div class="footer-msg">
-        <span><strong>💾</strong> Almacenamiento local permanente</span>
-        <span><strong>📡</strong> Sincronización P2P entre dispositivos</span>
-        <span><strong>🔒</strong> 100% privado, sin servidores</span>
-    </div>
-</div>
-
-<!-- Reproductor flotante -->
-<div class="floating-player" id="floatingPlayer">
-    <div class="player-name" id="playerName">Reproduciendo...</div>
-    <div id="playerContainer"></div>
-    <div class="player-controls">
-        <button class="btn btn-danger" id="closePlayerBtn">✕ Cerrar</button>
-        <button class="btn btn-download" id="downloadPlayerBtn">⬇️ Descargar</button>
-    </div>
-</div>
-
-<div id="toast" class="toast hidden"></div>
-
-<script>
-    (function() {
-        // ---------- CONFIG ----------
-        const DB_NAME = 'FileVaultDB';
-        const STORE_NAME = 'files';
-        let db = null;
-        let allFiles = [];
-        let searchTerm = '';
-        let currentPlayingId = null;
-        let deviceId = '';
-        let syncConnections = [];
-        let isConnected = false;
-        let syncChannel = null;
-
-        // ---------- ELEMENTOS ----------
-        const dropzone = document.getElementById('dropzone');
+    <script>
+        let selectedFiles = [];
+        const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
-        const fileListEl = document.getElementById('fileList');
-        const emptyState = document.getElementById('emptyState');
-        const fileCountEl = document.getElementById('fileCount');
-        const totalSizeEl = document.getElementById('totalSize');
-        const storagePercentEl = document.getElementById('storagePercent');
-        const clearAllBtn = document.getElementById('clearAllBtn');
-        const searchInput = document.getElementById('searchInput');
-        const clearSearchBtn = document.getElementById('clearSearchBtn');
-        const exportBtn = document.getElementById('exportBtn');
-        const importBtn = document.getElementById('importBtn');
-        const importFileInput = document.getElementById('importFileInput');
-        const themeToggle = document.getElementById('themeToggle');
-        const toast = document.getElementById('toast');
-        const floatingPlayer = document.getElementById('floatingPlayer');
-        const playerContainer = document.getElementById('playerContainer');
-        const playerName = document.getElementById('playerName');
-        const closePlayerBtn = document.getElementById('closePlayerBtn');
-        const downloadPlayerBtn = document.getElementById('downloadPlayerBtn');
-        const toggleSyncBtn = document.getElementById('toggleSyncBtn');
-        const syncPanel = document.getElementById('syncPanel');
-        const localCode = document.getElementById('localCode');
-        const remoteCodeInput = document.getElementById('remoteCodeInput');
-        const connectBtn = document.getElementById('connectBtn');
-        const disconnectBtn = document.getElementById('disconnectBtn');
-        const copyCodeBtn = document.getElementById('copyCodeBtn');
-        const syncStatus = document.getElementById('syncStatus');
-        const deviceIdEl = document.getElementById('deviceId');
-        const syncProgress = document.getElementById('syncProgress');
-        const syncStatusText = document.getElementById('syncStatusText');
-        const syncProgressText = document.getElementById('syncProgressText');
-        const syncProgressFill = document.getElementById('syncProgressFill');
+        const fileList = document.getElementById('fileList');
+        const sendBtn = document.getElementById('sendBtn');
+        const statusDiv = document.getElementById('status');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
 
-        // ---------- INICIALIZAR DISPOSITIVO ----------
-        function initDevice() {
-            let id = localStorage.getItem('filevault-device-id');
-            if (!id) {
-                id = 'DEV-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-                localStorage.setItem('filevault-device-id', id);
-            }
-            deviceId = id;
-            deviceIdEl.textContent = '📱 ' + id;
-            return id;
-        }
-        initDevice();
+        // Mostrar URL
+        document.getElementById('pageUrl').textContent = window.location.href;
 
-        // ---------- TOAST ----------
-        let toastTimeout = null;
-        function showToast(message, duration = 3000) {
-            toast.textContent = message;
-            toast.classList.remove('hidden');
-            clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(() => toast.classList.add('hidden'), duration);
-        }
-
-        // ---------- TEMA ----------
-        function loadTheme() {
-            const saved = localStorage.getItem('filevault-theme');
-            if (saved) {
-                document.documentElement.setAttribute('data-theme', saved);
-                return saved;
-            }
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const theme = prefersDark ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', theme);
-            localStorage.setItem('filevault-theme', theme);
-            return theme;
-        }
-        loadTheme();
-
-        themeToggle.addEventListener('click', () => {
-            const current = document.documentElement.getAttribute('data-theme');
-            const next = current === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', next);
-            localStorage.setItem('filevault-theme', next);
-        });
-
-        // ---------- DB ----------
-        function openDB() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME, 1);
-                request.onupgradeneeded = (e) => {
-                    const db = e.target.result;
-                    if (!db.objectStoreNames.contains(STORE_NAME)) {
-                        db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
-                    }
-                };
-                request.onsuccess = (e) => {
-                    db = e.target.result;
-                    resolve(db);
-                };
-                request.onerror = (e) => reject(e.target.error);
+        function copyUrl() {
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                showStatus('URL copiada al portapapeles', 'info');
+            }).catch(() => {
+                // Fallback
+                const input = document.createElement('input');
+                input.value = window.location.href;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                showStatus('URL copiada al portapapeles', 'info');
             });
         }
 
-        // ---------- HELPERS ----------
-        function formatSize(bytes) {
-            if (bytes === 0) return '0 B';
-            const k = 1024;
-            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
+        // Drag and drop
+        dropZone.addEventListener('click', () => fileInput.click());
 
-        function getAllFiles() {
-            return new Promise((resolve, reject) => {
-                if (!db) return reject('DB no inicializada');
-                const tx = db.transaction(STORE_NAME, 'readonly');
-                const store = tx.objectStore(STORE_NAME);
-                const request = store.getAll();
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = (e) => reject(e.target.error);
-            });
-        }
-
-        function saveFile(file) {
-            return new Promise((resolve, reject) => {
-                if (!db) return reject('DB no inicializada');
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const blob = e.target.result;
-                    const fileData = {
-                        name: file.name,
-                        type: file.type,
-                        size: file.size,
-                        lastModified: file.lastModified,
-                        data: blob,
-                        uploadedAt: Date.now(),
-                        deviceId: deviceId
-                    };
-                    const tx = db.transaction(STORE_NAME, 'readwrite');
-                    const store = tx.objectStore(STORE_NAME);
-                    const request = store.add(fileData);
-                    request.onsuccess = () => resolve(request.result);
-                    request.onerror = (e) => reject(e.target.error);
-                };
-                reader.onerror = (e) => reject(e.target.error);
-                reader.readAsArrayBuffer(file);
-            });
-        }
-
-        function deleteFileById(id) {
-            return new Promise((resolve, reject) => {
-                if (!db) return reject('DB no inicializada');
-                const tx = db.transaction(STORE_NAME, 'readwrite');
-                const store = tx.objectStore(STORE_NAME);
-                const request = store.delete(id);
-                request.onsuccess = () => resolve();
-                request.onerror = (e) => reject(e.target.error);
-            });
-        }
-
-        function clearAllFiles() {
-            return new Promise((resolve, reject) => {
-                if (!db) return reject('DB no inicializada');
-                const tx = db.transaction(STORE_NAME, 'readwrite');
-                const store = tx.objectStore(STORE_NAME);
-                const request = store.clear();
-                request.onsuccess = () => resolve();
-                request.onerror = (e) => reject(e.target.error);
-            });
-        }
-
-        function getFileById(id) {
-            return new Promise((resolve, reject) => {
-                if (!db) return reject('DB no inicializada');
-                const tx = db.transaction(STORE_NAME, 'readonly');
-                const store = tx.objectStore(STORE_NAME);
-                const request = store.get(id);
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = (e) => reject(e.target.error);
-            });
-        }
-
-        // ---------- REPRODUCIR ----------
-        async function playFile(id) {
-            try {
-                const file = await getFileById(id);
-                if (!file) {
-                    showToast('❌ Archivo no encontrado', 2000);
-                    return;
-                }
-
-                currentPlayingId = id;
-                const blob = new Blob([file.data], { type: file.type || 'application/octet-stream' });
-                const url = URL.createObjectURL(blob);
-                
-                playerName.textContent = '🎵 ' + file.name;
-                playerContainer.innerHTML = '';
-
-                const type = file.type || '';
-                let element = null;
-
-                if (type.startsWith('video/')) {
-                    element = document.createElement('video');
-                    element.controls = true;
-                    element.autoplay = true;
-                    element.style.width = '100%';
-                    element.style.maxHeight = '200px';
-                } else if (type.startsWith('audio/')) {
-                    element = document.createElement('audio');
-                    element.controls = true;
-                    element.autoplay = true;
-                    element.style.width = '100%';
-                    element.style.height = '40px';
-                } else if (type.startsWith('image/')) {
-                    element = document.createElement('img');
-                    element.style.width = '100%';
-                    element.style.maxHeight = '200px';
-                    element.style.objectFit = 'contain';
-                } else {
-                    showToast('📄 Vista previa no disponible', 2000);
-                    playerContainer.innerHTML = `<div style="padding:1rem;text-align:center;color:var(--text-muted);">📄 Vista previa no disponible</div>`;
-                    return;
-                }
-
-                element.src = url;
-                playerContainer.appendChild(element);
-                
-                downloadPlayerBtn.onclick = () => {
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = file.name;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                };
-
-                floatingPlayer.classList.add('active');
-                showToast('▶️ Reproduciendo: ' + file.name, 2000);
-
-                if (element && (type.startsWith('video/') || type.startsWith('audio/'))) {
-                    element.onended = () => setTimeout(() => closePlayer(), 2000);
-                }
-
-            } catch (err) {
-                console.error('Error al reproducir:', err);
-                showToast('❌ Error al reproducir', 2000);
-            }
-        }
-
-        function closePlayer() {
-            floatingPlayer.classList.remove('active');
-            if (playerContainer.firstChild) {
-                const el = playerContainer.firstChild;
-                if (el.src) URL.revokeObjectURL(el.src);
-                playerContainer.innerHTML = '';
-            }
-            currentPlayingId = null;
-        }
-
-        closePlayerBtn.addEventListener('click', closePlayer);
-
-        // ---------- RENDER ----------
-        async function renderFiles() {
-            try {
-                allFiles = await getAllFiles();
-                const filtered = allFiles.filter(f => 
-                    f.name.toLowerCase().includes(searchTerm.toLowerCase())
-                );
-
-                fileCountEl.textContent = allFiles.length;
-                const totalBytes = allFiles.reduce((acc, f) => acc + (f.size || 0), 0);
-                totalSizeEl.textContent = formatSize(totalBytes);
-
-                const refSize = 5 * 1024 * 1024 * 1024;
-                let percent = (totalBytes / refSize) * 100;
-                if (percent > 100) percent = 100;
-                storagePercentEl.textContent = Math.min(100, Math.round(percent)) + '%';
-
-                if (allFiles.length === 0) {
-                    emptyState.style.display = 'block';
-                    fileListEl.innerHTML = '';
-                    return;
-                } else {
-                    emptyState.style.display = 'none';
-                }
-
-                if (filtered.length === 0) {
-                    fileListEl.innerHTML = `<div class="empty-state"><span>🔍</span> No se encontraron archivos con "<strong>${searchTerm}</strong>"</div>`;
-                    return;
-                }
-
-                let html = '';
-                for (const file of filtered) {
-                    const sizeStr = formatSize(file.size || 0);
-                    const date = new Date(file.uploadedAt || Date.now());
-                    const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    
-                    const type = file.type || '';
-                    let previewHtml = '';
-                    if (type.startsWith('image/') || type.startsWith('video/') || type.startsWith('audio/')) {
-                        previewHtml = `<div class="file-preview" data-id="${file.id}">
-                            <span class="file-icon">🎬</span>
-                        </div>`;
-                    } else {
-                        const icons = { 'pdf': '📄', 'zip': '📦', 'rar': '📦', 'txt': '📝', 'doc': '📝', 'xls': '📊', 'ppt': '📊' };
-                        let icon = '📁';
-                        const ext = file.name.split('.').pop().toLowerCase();
-                        if (icons[ext]) icon = icons[ext];
-                        previewHtml = `<div class="file-preview"><span class="file-icon">${icon}</span></div>`;
-                    }
-
-                    const fromDevice = file.deviceId ? `📱 ${file.deviceId}` : '📱 Local';
-
-                    html += `
-                        <div class="file-card" data-id="${file.id}" tabindex="0">
-                            ${previewHtml}
-                            <div class="file-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</div>
-                            <div class="file-meta">${sizeStr} · ${dateStr} · ${fromDevice}</div>
-                            <div class="file-actions">
-                                <button class="btn btn-play play-btn" data-id="${file.id}">▶️</button>
-                                <button class="btn btn-download download-btn" data-id="${file.id}">⬇️</button>
-                                <button class="btn btn-share share-btn" data-id="${file.id}">📡</button>
-                                <button class="btn btn-delete delete-btn" data-id="${file.id}">🗑️</button>
-                            </div>
-                        </div>
-                    `;
-                }
-                fileListEl.innerHTML = html;
-
-                document.querySelectorAll('.play-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        playFile(Number(btn.dataset.id));
-                    });
-                });
-
-                document.querySelectorAll('.file-preview').forEach(el => {
-                    el.addEventListener('click', () => {
-                        playFile(Number(el.dataset.id));
-                    });
-                });
-
-                document.querySelectorAll('.download-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        downloadFileById(Number(btn.dataset.id));
-                    });
-                });
-
-                document.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.addEventListener('click', async (e) => {
-                        e.stopPropagation();
-                        const id = Number(btn.dataset.id);
-                        if (confirm('¿Eliminar este archivo?')) {
-                            if (currentPlayingId === id) closePlayer();
-                            await deleteFileById(id);
-                            await renderFiles();
-                            showToast('🗑️ Archivo eliminado', 2000);
-                        }
-                    });
-                });
-
-                document.querySelectorAll('.share-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        shareFileById(Number(btn.dataset.id));
-                    });
-                });
-
-            } catch (err) {
-                console.error('Error al renderizar:', err);
-            }
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // ---------- DESCARGAR ----------
-        async function downloadFileById(id) {
-            try {
-                const file = await getFileById(id);
-                if (!file) return showToast('❌ Archivo no encontrado', 2000);
-
-                const blob = new Blob([file.data], { type: file.type || 'application/octet-stream' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = file.name;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                setTimeout(() => URL.revokeObjectURL(url), 5000);
-                showToast(`⬇️ Descargando: ${file.name}`, 2000);
-            } catch (err) {
-                console.error('Error al descargar:', err);
-                showToast('❌ Error al descargar', 2000);
-            }
-        }
-
-        // ---------- COMPARTIR VÍA WebRTC ----------
-        async function shareFileById(id) {
-            try {
-                const file = await getFileById(id);
-                if (!file) return showToast('❌ Archivo no encontrado', 2000);
-
-                showToast('📡 Iniciando WebRTC...', 2000);
-
-                const blob = new Blob([file.data], { type: file.type || 'application/octet-stream' });
-                const arrayBuffer = await blob.arrayBuffer();
-
-                const pc1 = new RTCPeerConnection({
-                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-                });
-                const pc2 = new RTCPeerConnection({
-                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-                });
-
-                pc1.onicecandidate = (e) => {
-                    if (e.candidate) pc2.addIceCandidate(e.candidate);
-                };
-                pc2.onicecandidate = (e) => {
-                    if (e.candidate) pc1.addIceCandidate(e.candidate);
-                };
-
-                const channel = pc1.createDataChannel('fileTransfer');
-                channel.onopen = () => {
-                    channel.send(arrayBuffer);
-                    showToast('📤 Archivo enviado vía P2P', 3000);
-                    setTimeout(() => { pc1.close(); pc2.close(); }, 5000);
-                };
-
-                pc2.ondatachannel = (event) => {
-                    const receiveChannel = event.channel;
-                    receiveChannel.onmessage = (e) => {
-                        const receivedBlob = new Blob([e.data], { type: file.type });
-                        const url = URL.createObjectURL(receivedBlob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `recibido_${file.name}`;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        setTimeout(() => URL.revokeObjectURL(url), 5000);
-                        showToast('📥 Archivo recibido vía P2P', 3000);
-                    };
-                };
-
-                const offer = await pc1.createOffer();
-                await pc1.setLocalDescription(offer);
-                await pc2.setRemoteDescription(offer);
-                const answer = await pc2.createAnswer();
-                await pc2.setLocalDescription(answer);
-                await pc1.setRemoteDescription(answer);
-
-                showToast('📡 Conexión P2P establecida', 3000);
-
-            } catch (err) {
-                console.error('Error en WebRTC:', err);
-                showToast('❌ Error en P2P', 3000);
-            }
-        }
-
-        // ---------- SINCRONIZACIÓN P2P FUNCIONAL ----------
-        let peerConnection = null;
-        let dataChannel = null;
-        let isSyncActive = false;
-
-        // Generar código de conexión (oferta SDP)
-        async function createSyncOffer() {
-            try {
-                const pc = new RTCPeerConnection({
-                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-                });
-
-                const channel = pc.createDataChannel('sync');
-                dataChannel = channel;
-
-                channel.onopen = () => {
-                    isSyncActive = true;
-                    syncStatus.className = 'sync-status online';
-                    showToast('✅ Sincronización activa!', 3000);
-                    syncStatusText.textContent = '✅ Conectado';
-                    updateSyncProgress(100);
-                };
-
-                channel.onmessage = async (event) => {
-                    try {
-                        const data = JSON.parse(event.data);
-                        await handleSyncMessage(data, channel);
-                    } catch (err) {
-                        console.error('Error al procesar mensaje:', err);
-                    }
-                };
-
-                pc.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        // Actualizar código con nuevos candidatos
-                        updateLocalCode(pc.localDescription);
-                    }
-                };
-
-                const offer = await pc.createOffer();
-                await pc.setLocalDescription(offer);
-                peerConnection = pc;
-
-                updateLocalCode(pc.localDescription);
-                syncStatus.className = 'sync-status syncing';
-                syncStatusText.textContent = '🔄 Generando código...';
-                showToast('🔄 Código de conexión generado', 2000);
-
-                return pc.localDescription;
-
-            } catch (err) {
-                console.error('Error al crear oferta:', err);
-                showToast('❌ Error al generar código: ' + err.message, 3000);
-                return null;
-            }
-        }
-
-        function updateLocalCode(description) {
-            if (description) {
-                const code = btoa(JSON.stringify({
-                    type: description.type,
-                    sdp: description.sdp
-                }));
-                localCode.textContent = code;
-                localCode.dataset.code = code;
-            }
-        }
-
-        // Conectar a otro dispositivo usando su código
-        async function connectToPeer(code) {
-            try {
-                const description = JSON.parse(atob(code));
-                
-                const pc = new RTCPeerConnection({
-                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-                });
-
-                pc.ondatachannel = (event) => {
-                    dataChannel = event.channel;
-                    dataChannel.onopen = () => {
-                        isSyncActive = true;
-                        syncStatus.className = 'sync-status online';
-                        showToast('✅ Sincronización activa!', 3000);
-                        syncStatusText.textContent = '✅ Conectado';
-                        updateSyncProgress(100);
-                    };
-                    dataChannel.onmessage = async (event) => {
-                        try {
-                            const data = JSON.parse(event.data);
-                            await handleSyncMessage(data, dataChannel);
-                        } catch (err) {
-                            console.error('Error al procesar mensaje:', err);
-                        }
-                    };
-                };
-
-                pc.onicecandidate = (event) => {
-                    if (event.candidate) {
-                        // Actualizar conexión
-                    }
-                };
-
-                await pc.setRemoteDescription(description);
-                const answer = await pc.createAnswer();
-                await pc.setLocalDescription(answer);
-                peerConnection = pc;
-
-                syncStatus.className = 'sync-status syncing';
-                syncStatusText.textContent = '🔄 Conectando...';
-                showToast('🔄 Conectando al otro dispositivo...', 2000);
-
-                return pc;
-
-            } catch (err) {
-                console.error('Error al conectar:', err);
-                showToast('❌ Error al conectar: ' + err.message, 3000);
-                return null;
-            }
-        }
-
-        // Manejar mensajes de sincronización
-        async function handleSyncMessage(data, channel) {
-            if (data.type === 'sync-request') {
-                // Solicitud de sincronización: enviar lista de archivos
-                const files = await getAllFiles();
-                const metadata = files.map(f => ({
-                    id: f.id,
-                    name: f.name,
-                    type: f.type,
-                    size: f.size,
-                    uploadedAt: f.uploadedAt,
-                    deviceId: f.deviceId || 'unknown'
-                }));
-                
-                channel.send(JSON.stringify({
-                    type: 'sync-metadata',
-                    deviceId: deviceId,
-                    files: metadata
-                }));
-                
-                showToast(`📤 Enviando metadatos (${metadata.length} archivos)`, 2000);
-
-            } else if (data.type === 'sync-metadata') {
-                // Recibir metadatos del otro dispositivo
-                const remoteFiles = data.files || [];
-                const localFiles = await getAllFiles();
-                const localIds = new Set(localFiles.map(f => f.id));
-                
-                let missingCount = 0;
-                for (const remoteFile of remoteFiles) {
-                    if (!localIds.has(remoteFile.id)) {
-                        // Solicitar archivo faltante
-                        channel.send(JSON.stringify({
-                            type: 'request-file',
-                            id: remoteFile.id
-                        }));
-                        missingCount++;
-                    }
-                }
-                
-                if (missingCount === 0) {
-                    showToast('✅ Todos los archivos están sincronizados', 3000);
-                } else {
-                    showToast(`📥 Solicitando ${missingCount} archivo(s) faltantes...`, 3000);
-                    updateSyncProgress(50);
-                }
-
-            } else if (data.type === 'request-file') {
-                // Enviar archivo solicitado
-                const file = await getFileById(data.id);
-                if (file) {
-                    const blob = new Blob([file.data], { type: file.type });
-                    const buffer = await blob.arrayBuffer();
-                    
-                    // Enviar metadata del archivo
-                    channel.send(JSON.stringify({
-                        type: 'file-transfer',
-                        id: file.id,
-                        name: file.name,
-                        type: file.type,
-                        size: file.size,
-                        uploadedAt: file.uploadedAt,
-                        deviceId: file.deviceId || deviceId
-                    }));
-                    
-                    // Enviar datos binarios (en chunks para archivos grandes)
-                    const chunkSize = 16384; // 16KB chunks
-                    for (let i = 0; i < buffer.byteLength; i += chunkSize) {
-                        const chunk = buffer.slice(i, i + chunkSize);
-                        channel.send(chunk);
-                    }
-                    
-                    // Marcar fin del archivo
-                    channel.send(JSON.stringify({ type: 'file-end', id: file.id }));
-                    
-                    showToast(`📤 Enviando: ${file.name} (${formatSize(file.size)})`, 2000);
-                }
-
-            } else if (data.type === 'file-transfer') {
-                // Prepararse para recibir archivo
-                showToast(`📥 Recibiendo: ${data.name} (${formatSize(data.size)})`, 2000);
-                syncStatusText.textContent = `📥 Recibiendo: ${data.name}`;
-                
-                // Recibir datos binarios
-                const chunks = [];
-                let receivedSize = 0;
-                let totalSize = data.size;
-
-                // Escuchar mensajes binarios
-                const binaryHandler = async (event) => {
-                    if (event.data instanceof ArrayBuffer) {
-                        chunks.push(event.data);
-                        receivedSize += event.data.byteLength;
-                        const progress = Math.round((receivedSize / totalSize) * 100);
-                        updateSyncProgress(progress);
-                        syncStatusText.textContent = `📥 Recibiendo: ${Math.round(progress)}%`;
-                    } else if (typeof event.data === 'string') {
-                        try {
-                            const msg = JSON.parse(event.data);
-                            if (msg.type === 'file-end' && msg.id === data.id) {
-                                // Archivo completo, guardar
-                                const fullBuffer = new Uint8Array(receivedSize);
-                                let offset = 0;
-                                for (const chunk of chunks) {
-                                    fullBuffer.set(new Uint8Array(chunk), offset);
-                                    offset += chunk.byteLength;
-                                }
-                                
-                                const blob = new Blob([fullBuffer], { type: data.type });
-                                const fileObj = new File([blob], data.name, {
-                                    type: data.type,
-                                    lastModified: data.uploadedAt || Date.now()
-                                });
-                                
-                                await saveFile(fileObj);
-                                await renderFiles();
-                                
-                                showToast(`✅ Archivo recibido: ${data.name}`, 3000);
-                                syncStatusText.textContent = '✅ Sincronización completada';
-                                updateSyncProgress(100);
-                                
-                                // Dejar de escuchar este mensaje
-                                dataChannel.removeEventListener('message', binaryHandler);
-                            }
-                        } catch (err) {
-                            // No es JSON, ignorar
-                        }
-                    }
-                };
-
-                dataChannel.addEventListener('message', binaryHandler);
-
-            } else if (data.type === 'file-end') {
-                // Fin de archivo recibido
-                showToast(`✅ Archivo recibido correctamente`, 2000);
-            }
-        }
-
-        function updateSyncProgress(percent) {
-            syncProgress.style.display = 'block';
-            syncProgressFill.style.width = percent + '%';
-            syncProgressText.textContent = percent + '%';
-        }
-
-        // ---------- FUNCIONES DE SINCRONIZACIÓN ----------
-        function toggleSyncPanel() {
-            const isVisible = syncPanel.classList.toggle('active');
-            if (isVisible) {
-                createSyncOffer();
-            } else {
-                disconnectSync();
-            }
-        }
-
-        function disconnectSync() {
-            if (peerConnection) {
-                peerConnection.close();
-                peerConnection = null;
-            }
-            if (dataChannel) {
-                dataChannel.close();
-                dataChannel = null;
-            }
-            isSyncActive = false;
-            isConnected = false;
-            syncStatus.className = 'sync-status offline';
-            syncStatusText.textContent = '❌ Desconectado';
-            syncProgress.style.display = 'none';
-            localCode.textContent = 'Esperando conexión...';
-            showToast('❌ Desconectado', 2000);
-        }
-
-        // ---------- COPIA DE CÓDIGO ----------
-        copyCodeBtn.addEventListener('click', () => {
-            const code = localCode.dataset.code || localCode.textContent;
-            if (code && code !== 'Esperando conexión...') {
-                navigator.clipboard.writeText(code).then(() => {
-                    showToast('📋 Código copiado al portapapeles', 2000);
-                }).catch(() => {
-                    // Fallback
-                    const range = document.createRange();
-                    range.selectNode(localCode);
-                    window.getSelection().removeAllRanges();
-                    window.getSelection().addRange(range);
-                    document.execCommand('copy');
-                    showToast('📋 Código copiado', 2000);
-                });
-            } else {
-                showToast('⚠️ Espera a que se genere el código', 2000);
-            }
-        });
-
-        // ---------- CONECTAR A OTRO DISPOSITIVO ----------
-        connectBtn.addEventListener('click', async () => {
-            const code = remoteCodeInput.value.trim();
-            if (!code) {
-                showToast('⚠️ Pega el código del otro dispositivo', 2000);
-                return;
-            }
-            await connectToPeer(code);
-        });
-
-        disconnectBtn.addEventListener('click', disconnectSync);
-
-        // ---------- EXPORTAR / IMPORTAR ----------
-        function arrayBufferToBase64(buffer) {
-            const bytes = new Uint8Array(buffer);
-            let binary = '';
-            for (let i = 0; i < bytes.length; i++) {
-                binary += String.fromCharCode(bytes[i]);
-            }
-            return btoa(binary);
-        }
-
-        function base64ToArrayBuffer(base64) {
-            const binary = atob(base64);
-            const bytes = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) {
-                bytes[i] = binary.charCodeAt(i);
-            }
-            return bytes.buffer;
-        }
-
-        async function exportDatabase() {
-            try {
-                const files = await getAllFiles();
-                const data = {
-                    version: '1.0',
-                    exportedAt: new Date().toISOString(),
-                    deviceId: deviceId,
-                    files: files.map(f => ({
-                        name: f.name,
-                        type: f.type,
-                        size: f.size,
-                        lastModified: f.lastModified,
-                        uploadedAt: f.uploadedAt,
-                        deviceId: f.deviceId || deviceId,
-                        data: arrayBufferToBase64(f.data)
-                    }))
-                };
-                const json = JSON.stringify(data, null, 2);
-                const blob = new Blob([json], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `filevault_backup_${new Date().toISOString().slice(0,10)}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                setTimeout(() => URL.revokeObjectURL(url), 5000);
-                showToast('💾 Backup exportado correctamente', 3000);
-            } catch (err) {
-                console.error('Error al exportar:', err);
-                showToast('❌ Error al exportar', 3000);
-            }
-        }
-
-        async function importDatabase(file) {
-            try {
-                const text = await file.text();
-                const data = JSON.parse(text);
-                if (!data.files || !Array.isArray(data.files)) {
-                    throw new Error('Formato inválido');
-                }
-
-                if (!confirm(`⚠️ ¿Importar ${data.files.length} archivos de ${data.deviceId || 'otro dispositivo'}?`)) return;
-
-                let count = 0;
-                for (const fileData of data.files) {
-                    const buffer = base64ToArrayBuffer(fileData.data);
-                    const blob = new Blob([buffer], { type: fileData.type || 'application/octet-stream' });
-                    const fileObj = new File([blob], fileData.name, {
-                        type: fileData.type || 'application/octet-stream',
-                        lastModified: fileData.lastModified || Date.now()
-                    });
-                    await saveFile(fileObj);
-                    count++;
-                }
-                await renderFiles();
-                showToast(`✅ ${count} archivos importados correctamente desde ${data.deviceId || 'otro dispositivo'}`, 3000);
-            } catch (err) {
-                console.error('Error al importar:', err);
-                showToast('❌ Error al importar: ' + err.message, 3000);
-            }
-        }
-
-        // ---------- SUBIR ----------
-        async function handleFiles(fileList) {
-            if (!fileList || fileList.length === 0) return;
-            try {
-                let uploaded = 0;
-                for (const file of fileList) {
-                    await saveFile(file);
-                    uploaded++;
-                }
-                await renderFiles();
-                showToast(`✅ ${uploaded} archivo(s) subido(s) y guardados permanentemente`, 3000);
-                
-                // Reproducir automáticamente
-                if (fileList.length === 1) {
-                    const lastFile = fileList[0];
-                    const type = lastFile.type || '';
-                    if (type.startsWith('video/') || type.startsWith('audio/') || type.startsWith('image/')) {
-                        setTimeout(async () => {
-                            const files = await getAllFiles();
-                            const last = files[files.length - 1];
-                            if (last) playFile(last.id);
-                        }, 500);
-                    }
-                }
-            } catch (err) {
-                console.error('Error al subir:', err);
-                showToast('❌ Error al guardar archivo(s)', 3000);
-            }
-        }
-
-        // ---------- EVENTOS UI ----------
-        toggleSyncBtn.addEventListener('click', toggleSyncPanel);
-
-        dropzone.addEventListener('click', () => fileInput.click());
-        dropzone.addEventListener('dragover', (e) => {
+        dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
-            dropzone.classList.add('dragover');
+            dropZone.classList.add('dragover');
         });
-        dropzone.addEventListener('dragleave', () => {
-            dropzone.classList.remove('dragover');
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
         });
-        dropzone.addEventListener('drop', (e) => {
+
+        dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
-            dropzone.classList.remove('dragover');
-            if (e.dataTransfer.files.length) {
-                handleFiles(e.dataTransfer.files);
-            }
+            dropZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
         });
 
         fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length) {
-                handleFiles(e.target.files);
-                fileInput.value = '';
-            }
+            handleFiles(e.target.files);
         });
 
-        clearAllBtn.addEventListener('click', async () => {
-            if (!confirm('⚠️ ¿Eliminar TODOS los archivos? Esta acción es permanente.')) return;
+        function handleFiles(files) {
+            const newFiles = Array.from(files);
+            selectedFiles = [...selectedFiles, ...newFiles];
+            updateUI();
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            updateUI();
+        }
+
+        function updateUI() {
+            if (selectedFiles.length === 0) {
+                fileList.innerHTML = '';
+                sendBtn.disabled = true;
+                return;
+            }
+
+            fileList.innerHTML = selectedFiles.map((file, index) => `
+                <div class="file-item">
+                    <div class="file-info">
+                        <span>${getFileIcon(file.type)}</span>
+                        <span>${file.name}</span>
+                        <span class="file-size">(${(file.size / 1024).toFixed(1)} KB)</span>
+                    </div>
+                    <button class="delete-btn" onclick="removeFile(${index})">✖</button>
+                </div>
+            `).join('');
+
+            sendBtn.disabled = false;
+            hideStatus();
+        }
+
+        function getFileIcon(type) {
+            if (type.startsWith('image/')) return '🖼️';
+            if (type.startsWith('video/')) return '🎬';
+            if (type.startsWith('audio/')) return '🎵';
+            if (type.includes('pdf')) return '📄';
+            if (type.includes('zip') || type.includes('rar')) return '📦';
+            return '📎';
+        }
+
+        async function sendFiles() {
+            if (selectedFiles.length === 0) return;
+
+            sendBtn.disabled = true;
+            progressBar.classList.add('active');
+            progressFill.style.width = '0%';
+
             try {
-                closePlayer();
-                await clearAllFiles();
-                await renderFiles();
-                showToast('🗑️ Todos los archivos eliminados', 3000);
-            } catch (err) {
-                console.error(err);
-                showToast('❌ Error al borrar archivos', 3000);
-            }
-        });
+                const formData = new FormData();
+                selectedFiles.forEach(file => {
+                    formData.append('files', file);
+                });
 
-        searchInput.addEventListener('input', (e) => {
-            searchTerm = e.target.value;
-            renderFiles();
-        });
+                // Simular progreso
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += Math.random() * 10;
+                    if (progress > 90) clearInterval(interval);
+                    progressFill.style.width = Math.min(progress, 90) + '%';
+                }, 200);
 
-        clearSearchBtn.addEventListener('click', () => {
-            searchInput.value = '';
-            searchTerm = '';
-            renderFiles();
-        });
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
 
-        exportBtn.addEventListener('click', exportDatabase);
-        importBtn.addEventListener('click', () => importFileInput.click());
+                clearInterval(interval);
+                progressFill.style.width = '100%';
 
-        importFileInput.addEventListener('change', (e) => {
-            if (e.target.files.length) {
-                importDatabase(e.target.files[0]);
-                importFileInput.value = '';
-            }
-        });
-
-        // ---------- ALMACENAMIENTO PERSISTENTE ----------
-        async function requestPersistentStorage() {
-            try {
-                if (navigator.storage && navigator.storage.persist) {
-                    const isPersisted = await navigator.storage.persisted();
-                    if (!isPersisted) {
-                        const granted = await navigator.storage.persist();
-                        if (granted) {
-                            console.log('✅ Almacenamiento persistente concedido');
-                            showToast('💾 Almacenamiento persistente activado', 3000);
+                if (response.ok) {
+                    const result = await response.json();
+                    showStatus(`✅ ${result.message || 'Archivos enviados correctamente'}`, 'success');
+                    
+                    // Generar enlaces de descarga
+                    if (result.files) {
+                        const links = result.files.map(f => 
+                            `<a href="/download/${f}" target="_blank">${f}</a>`
+                        ).join(' | ');
+                        statusDiv.innerHTML += `<br>📥 ${links}`;
+                    }
+                    
+                    selectedFiles = [];
+                    setTimeout(updateUI, 2000);
+                } else {
+                    throw new Error('Error al enviar');
+                }
+            } catch (error) {
+                showStatus('❌ Error al enviar archivos. ' + error.message, 'error');
+                // Fallback: compartir usando Web Share API
+                if (navigator.share) {
+                    try {
+                        await navigator.share({
+                            title: 'Archivos compartidos',
+                            files: selectedFiles
+                        });
+                        showStatus('✅ Archivos compartidos usando la API nativa', 'success');
+                        selectedFiles = [];
+                        setTimeout(updateUI, 2000);
+                    } catch (shareError) {
+                        if (shareError.name !== 'AbortError') {
+                            console.error(shareError);
                         }
                     }
                 }
-            } catch (err) {
-                console.warn('Error al solicitar almacenamiento persistente:', err);
+            } finally {
+                sendBtn.disabled = false;
+                setTimeout(() => {
+                    progressBar.classList.remove('active');
+                    progressFill.style.width = '0%';
+                }, 3000);
             }
         }
 
-        // ---------- INICIO ----------
-        (async function init() {
-            try {
-                await openDB();
-                await requestPersistentStorage();
-                await renderFiles();
-                syncStatus.className = 'sync-status offline';
-                console.log('📁 FileVault Sync Pro listo - Dispositivo:', deviceId);
-                showToast(`📱 Dispositivo: ${deviceId} · Listo para sincronizar`, 3000);
-            } catch (err) {
-                console.error('Fallo al iniciar:', err);
-                showToast('❌ Error al iniciar IndexedDB', 3000);
-            }
-        })();
+        function showStatus(message, type = 'info') {
+            statusDiv.className = 'status ' + type;
+            statusDiv.textContent = message;
+            statusDiv.style.display = 'block';
+        }
 
-        // Exponer utilidades
-        window.__fileVault = { 
-            getAllFiles, 
-            clearAllFiles, 
-            deleteFileById, 
-            exportDatabase, 
-            playFile,
-            connectToPeer,
-            createSyncOffer,
-            deviceId
-        };
-    })();
-</script>
+        function hideStatus() {
+            statusDiv.style.display = 'none';
+        }
+
+        // Detectar si es móvil
+        if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+            document.querySelector('h1').textContent = '📱 Recibe archivos';
+            document.querySelector('.url-info').style.display = 'none';
+        }
+    </script>
 </body>
 </html>
