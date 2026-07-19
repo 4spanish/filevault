@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FileVault Media - Reproducción integrada</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg-primary: #0b0f1a;
+            --bg-secondary: #1a1f2e;
+            --bg-card: #161c2b;
+            --bg-input: #1e243a;
+            --text-primary: #e0e4f0;
+            --text-secondary: #8e97b0;
+            --text-muted: #6d7796;
+            --border-color: #2d3448;
+            --accent: #b388ff;
+            --accent-secondary: #82b1ff;
+            --shadow: rgba(0,0,0,0.7);
+            --card-hover: #2a3148;
+        }
+        [data-theme="light"] {
+            --bg-primary: #f0f2f8;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --bg-input: #e8ecf5;
+            --text-primary: #1a1f2e;
+            --text-secondary: #4a5370;
+            --text-muted: #7b85a6;
+            --border-color: #d0d6ec;
+            --shadow: rgba(0,0,0,0.1);
+            --card-hover: #e8ecf5;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 1.5rem 1rem;
+            color: var(--text-primary);
+            transition: background 0.3s, color 0.3s;
+        }
+        .container {
+            max-width: 1400px;
+            width: 100%;
+            background: var(--bg-secondary);
+            backdrop-filter: blur(12px);
+            border-radius: 2.5rem;
+            padding: 2rem;
+            box-shadow: 0 20px 60px var(--shadow);
+            border: 1px solid var(--border-color);
+            transition: 0.3s;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--accent), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        .header-controls {
+            display: flex;
+            gap: 0.8rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .theme-toggle {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: 0.2s;
+        }
+        .theme-toggle:hover {
+            background: var(--card-hover);
+        }
+        .subhead {
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            border-left: 3px solid var(--accent);
+            padding-left: 1rem;
+            font-size: 0.95rem;
+        }
+        .search-bar {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .search-bar input {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.7rem 1.2rem;
+            border-radius: 2rem;
+            border: 1px solid var(--border-color);
+            background: var(--bg-input);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            transition: 0.2s;
+        }
+        .search-bar input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(179, 136, 255, 0.15);
+        }
+        .search-bar input::placeholder {
+            color: var(--text-muted);
+        }
+        .btn {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem 1.2rem;
+            border-radius: 2rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+        .btn:hover {
+            background: var(--card-hover);
+            transform: translateY(-1px);
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #0b0f1a;
+            border-color: var(--accent);
+        }
+        .btn-primary:hover {
+            background: #a07ae0;
+            border-color: #a07ae0;
+        }
+        .btn-danger {
+            background: #4a2f3f;
+            color: #f0b0b0;
+            border-color: #4a2f3f;
+        }
+        .btn-danger:hover {
+            background: #6d3b4f;
+            color: white;
+        }
+        .btn-success {
+            background: #2f4a3f;
+            color: #b0f0d0;
+            border-color: #2f4a3f;
+        }
+        .btn-success:hover {
+            background: #3b6d4f;
+            color: white;
+        }
+        .dropzone {
+            border: 2px dashed var(--border-color);
+            border-radius: 1.5rem;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            background: rgba(255,255,255,0.02);
+            transition: 0.25s ease;
+            cursor: pointer;
+            margin-bottom: 1.5rem;
+        }
+        .dropzone:hover, .dropzone.dragover {
+            border-color: var(--accent);
+            background: rgba(179, 136, 255, 0.06);
+            transform: scale(1.01);
+        }
+        .dropzone-icon { font-size: 3rem; margin-bottom: 0.3rem; }
+        .dropzone p { font-size: 1.1rem; color: var(--text-secondary); }
+        .dropzone small { color: var(--text-muted); display: block; margin-top: 0.4rem; }
+        input[type="file"] { display: none; }
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            background: var(--bg-input);
+            padding: 0.8rem 1.5rem;
+            border-radius: 3rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.9rem;
+        }
+        .stat-item span:first-child { color: var(--text-secondary); }
+        .stat-item span:last-child {
+            font-weight: 600;
+            background: var(--bg-secondary);
+            padding: 0.15rem 0.8rem;
+            border-radius: 2rem;
+            font-size: 0.85rem;
+        }
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.2rem;
+            margin-top: 1rem;
+        }
+        .file-card {
+            background: var(--bg-card);
+            border-radius: 1.5rem;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+        .file-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px var(--shadow);
+        }
+        .file-preview {
+            width: 100%;
+            border-radius: 0.8rem;
+            margin-bottom: 0.8rem;
+            background: var(--bg-primary);
+            overflow: hidden;
+            position: relative;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .file-preview img,
+        .file-preview video,
+        .file-preview audio {
+            width: 100%;
+            max-height: 200px;
+            object-fit: contain;
+            border-radius: 0.8rem;
+        }
+        .file-preview audio {
+            height: 50px;
+            padding: 0 10px;
+        }
+        .file-preview .file-icon {
+            font-size: 3rem;
+            opacity: 0.6;
+            padding: 1.5rem;
+        }
+        .file-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--text-primary);
+        }
+        .file-meta {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin: 0.3rem 0 0.6rem;
+        }
+        .file-actions {
+            display: flex;
+            gap: 0.4rem;
+            margin-top: auto;
+            flex-wrap: wrap;
+        }
+        .file-actions .btn {
+            flex: 1;
+            justify-content: center;
+            font-size: 0.7rem;
+            padding: 0.3rem 0.6rem;
+        }
+        .btn-download { background: #4a3f7a; color: white; border-color: #4a3f7a; }
+        .btn-download:hover { background: #5f51a0; }
+        .btn-delete { background: #4a2f3f; color: #f0b0b0; border-color: #4a2f3f; }
+        .btn-delete:hover { background: #6d3b4f; color: white; }
+        .btn-share { background: #2f4a6d; color: #b0d0f0; border-color: #2f4a6d; }
+        .btn-share:hover { background: #3b5f8a; color: white; }
+        .btn-play { background: #2f6d4a; color: #b0f0d0; border-color: #2f6d4a; }
+        .btn-play:hover { background: #3b8a5f; color: white; }
+        .empty-state {
+            text-align: center;
+            padding: 2.5rem 0;
+            color: var(--text-muted);
+        }
+        .empty-state span { font-size: 3.5rem; display: block; margin-bottom: 0.5rem; }
+        .footer-msg {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-color);
+            padding-top: 1.5rem;
+        }
+        .footer-msg strong { color: var(--accent); }
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px var(--shadow);
+            color: var(--text-primary);
+            max-width: 350px;
+            z-index: 999;
+            animation: slideUp 0.3s ease;
+            border-left: 4px solid var(--accent);
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .toast.hidden { display: none; }
+        
+        /* Reproductor flotante */
+        .floating-player {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 320px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 0.8rem;
+            box-shadow: 0 10px 40px var(--shadow);
+            z-index: 999;
+            display: none;
+            animation: slideUp 0.3s ease;
+        }
+        .floating-player.active {
+            display: block;
+        }
+        .floating-player video,
+        .floating-player audio {
+            width: 100%;
+            border-radius: 0.5rem;
+            max-height: 200px;
+        }
+        .floating-player audio {
+            height: 40px;
+        }
+        .floating-player .player-controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            align-items: center;
+        }
+        .floating-player .player-controls .btn {
+            padding: 0.2rem 0.8rem;
+            font-size: 0.7rem;
+        }
+        .floating-player .player-name {
+            font-size: 0.8rem;
+            margin-bottom: 0.3rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        @media (max-width: 600px) {
+            .container { padding: 1rem; }
+            h1 { font-size: 1.8rem; }
+            .header { flex-direction: column; align-items: stretch; }
+            .stats-bar { flex-direction: column; align-items: stretch; gap: 0.4rem; }
+            .file-grid { grid-template-columns: 1fr; }
+            .floating-player { width: 90%; right: 5%; bottom: 80px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🎬 FileVault Media</h1>
+        <div class="header-controls">
+            <button class="theme-toggle" id="themeToggle" title="Cambiar tema">🌓</button>
+        </div>
+    </div>
+    <div class="subhead">Reproducción integrada · Sin límites · Almacenamiento perpetuo</div>
+
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="🔍 Buscar archivos..." />
+        <button class="btn" id="clearSearchBtn">✕ Limpiar</button>
+    </div>
+
+    <div class="dropzone" id="dropzone">
+        <div class="dropzone-icon">⬆️</div>
+        <p><strong>Arrastra o haz clic</strong> para subir archivos</p>
+        <small>Videos, audio, imágenes, documentos · Reproducción automática</small>
+        <input type="file" id="fileInput" multiple />
+    </div>
+
+    <div class="stats-bar">
+        <div class="stat-item"><span>📦 Archivos</span><span id="fileCount">0</span></div>
+        <div class="stat-item"><span>⚖️ Peso total</span><span id="totalSize">0 B</span></div>
+        <div class="stat-item"><span>💾 Uso</span><span id="storagePercent">0%</span></div>
+        <div class="stat-item">
+            <button class="btn btn-success" id="exportBtn">💾 Exportar</button>
+            <button class="btn btn-primary" id="importBtn">📥 Importar</button>
+            <button class="btn btn-danger" id="clearAllBtn">🗑️ Borrar todo</button>
+        </div>
+    </div>
+
+    <div id="fileList" class="file-grid"></div>
+    <div id="emptyState" class="empty-state"><span>📭</span> No hay archivos guardados aún</div>
+
+    <input type="file" id="importFileInput" accept=".json" style="display:none" />
+
+    <div class="footer-msg">
+        <strong>🎵</strong> Reproducción automática · <strong>📡</strong> P2P Sharing · <strong>💾</strong> Backup · <strong>🔒</strong> Local y privado
+    </div>
+</div>
+
+<!-- Reproductor flotante -->
+<div class="floating-player" id="floatingPlayer">
+    <div class="player-name" id="playerName">Reproduciendo...</div>
+    <div id="playerContainer"></div>
+    <div class="player-controls">
+        <button class="btn btn-danger" id="closePlayerBtn">✕ Cerrar</button>
+        <button class="btn btn-download" id="downloadPlayerBtn">⬇️ Descargar</button>
+    </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script>
+    (function() {
+        // ---------- CONFIG ----------
+        const DB_NAME = 'FileVaultDB';
+        const STORE_NAME = 'files';
+        let db = null;
+        let allFiles = [];
+        let searchTerm = '';
+        let currentPlayingId = null;
+
+        // ---------- ELEMENTOS ----------
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const fileListEl = document.getElementById('fileList');
+        const emptyState = document.getElementById('emptyState');
+        const fileCountEl = document.getElementById('fileCount');
+        const totalSizeEl = document.getElementById('totalSize');
+        const storagePercentEl = document.getElementById('storagePercent');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        const searchInput = document.getElementById('searchInput');
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const importBtn = document.getElementById('importBtn');
+        const importFileInput = document.getElementById('importFileInput');
+        const themeToggle = document.getElementById('themeToggle');
+        const toast = document.getElementById('toast');
+        const floatingPlayer = document.getElementById('floatingPlayer');
+        const playerContainer = document.getElementById('playerContainer');
+        const playerName = document.getElementById('playerName');
+        const closePlayerBtn = document.getElementById('closePlayerBtn');
+        const downloadPlayerBtn = document.getElementById('downloadPlayerBtn');
+
+        // ---------- TOAST ----------
+        let toastTimeout = null;
+        function showToast(message, duration = 3000) {
+            toast.textContent = message;
+            toast.classList.remove('hidden');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => toast.classList.add('hidden'), duration);
+        }
+
+        // ---------- TEMA ----------
+        function loadTheme() {
+            const saved = localStorage.getItem('filevault-theme');
+            if (saved) {
+                document.documentElement.setAttribute('data-theme', saved);
+                return saved;
+            }
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = prefersDark ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('filevault-theme', theme);
+            return theme;
+        }
+        loadTheme();
+
+        themeToggle.addEventListener('click', () => {
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('filevault-theme', next);
+        });
+
+        // ---------- DB ----------
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, 1);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                    }
+                };
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    resolve(db);
+                };
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        // ---------- HELPERS ----------
+        function formatSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function getAllFiles() {
+            return new Promise((resolve, reject) => {
+                if (!db) return reject('DB no inicializada');
+                const tx = db.transaction(STORE_NAME, 'readonly');
+                const store = tx.objectStore(STORE_NAME);
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        function saveFile(file) {
+            return new Promise((resolve, reject) => {
+                if (!db) return reject('DB no inicializada');
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const blob = e.target.result;
+                    const fileData = {
+                        name: file.name,
+                        type: file.type,
+                        size: file.size,
+                        lastModified: file.lastModified,
+                        data: blob,
+                        uploadedAt: Date.now()
+                    };
+                    const tx = db.transaction(STORE_NAME, 'readwrite');
+                    const store = tx.objectStore(STORE_NAME);
+                    const request = store.add(fileData);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = (e) => reject(e.target.error);
+                };
+                reader.onerror = (e) => reject(e.target.error);
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        function deleteFileById(id) {
+            return new Promise((resolve, reject) => {
+                if (!db) return reject('DB no inicializada');
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                const store = tx.objectStore(STORE_NAME);
+                const request = store.delete(id);
+                request.onsuccess = () => resolve();
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        function clearAllFiles() {
+            return new Promise((resolve, reject) => {
+                if (!db) return reject('DB no inicializada');
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                const store = tx.objectStore(STORE_NAME);
+                const request = store.clear();
+                request.onsuccess = () => resolve();
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        // ---------- OBTENER ARCHIVO POR ID ----------
+        function getFileById(id) {
+            return new Promise((resolve, reject) => {
+                if (!db) return reject('DB no inicializada');
+                const tx = db.transaction(STORE_NAME, 'readonly');
+                const store = tx.objectStore(STORE_NAME);
+                const request = store.get(id);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+
+        // ---------- REPRODUCIR EN FLOTANTE ----------
+        async function playFile(id) {
+            try {
+                const file = await getFileById(id);
+                if (!file) {
+                    showToast('❌ Archivo no encontrado', 2000);
+                    return;
+                }
+
+                currentPlayingId = id;
+                const blob = new Blob([file.data], { type: file.type || 'application/octet-stream' });
+                const url = URL.createObjectURL(blob);
+                
+                playerName.textContent = '🎵 ' + file.name;
+                playerContainer.innerHTML = '';
+
+                // Detectar tipo de medio
+                const type = file.type || '';
+                let element = null;
+
+                if (type.startsWith('video/')) {
+                    element = document.createElement('video');
+                    element.controls = true;
+                    element.autoplay = true;
+                    element.style.width = '100%';
+                    element.style.maxHeight = '200px';
+                } else if (type.startsWith('audio/')) {
+                    element = document.createElement('audio');
+                    element.controls = true;
+                    element.autoplay = true;
+                    element.style.width = '100%';
+                    element.style.height = '40px';
+                } else if (type.startsWith('image/')) {
+                    element = document.createElement('img');
+                    element.style.width = '100%';
+                    element.style.maxHeight = '200px';
+                    element.style.objectFit = 'contain';
+                } else if (type === 'application/pdf') {
+                    element = document.createElement('iframe');
+                    element.style.width = '100%';
+                    element.style.height = '200px';
+                    element.style.border = 'none';
+                } else {
+                    // Archivo no reproducible
+                    showToast('📄 Este archivo no se puede previsualizar', 2000);
+                    playerContainer.innerHTML = `<div style="padding:1rem;text-align:center;color:var(--text-muted);">📄 Vista previa no disponible</div>`;
+                    return;
+                }
+
+                element.src = url;
+                playerContainer.appendChild(element);
+                
+                // Guardar URL para descarga
+                downloadPlayerBtn.onclick = () => {
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = file.name;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                };
+
+                floatingPlayer.classList.add('active');
+                showToast('▶️ Reproduciendo: ' + file.name, 2000);
+
+                // Cerrar automáticamente al terminar (solo video/audio)
+                if (element && (type.startsWith('video/') || type.startsWith('audio/'))) {
+                    element.onended = () => {
+                        setTimeout(() => closePlayer(), 2000);
+                    };
+                }
+
+            } catch (err) {
+                console.error('Error al reproducir:', err);
+                showToast('❌ Error al reproducir', 2000);
+            }
+        }
+
+        function closePlayer() {
+            floatingPlayer.classList.remove('active');
+            if (playerContainer.firstChild) {
+                const el = playerContainer.firstChild;
+                if (el.src) {
+                    URL.revokeObjectURL(el.src);
+                }
+                playerContainer.innerHTML = '';
+            }
+            currentPlayingId = null;
+        }
+
+        closePlayerBtn.addEventListener('click', closePlayer);
+
+        // ---------- RENDER CON REPRODUCCIÓN ----------
+        async function renderFiles() {
+            try {
+                allFiles = await getAllFiles();
+                const filtered = allFiles.filter(f => 
+                    f.name.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+
+                fileCountEl.textContent = allFiles.length;
+                const totalBytes = allFiles.reduce((acc, f) => acc + (f.size || 0), 0);
+                totalSizeEl.textContent = formatSize(totalBytes);
+
+                const refSize = 5 * 1024 * 1024 * 1024;
+                let percent = (totalBytes / refSize) * 100;
+                if (percent > 100) percent = 100;
+                storagePercentEl.textContent = Math.min(100, Math.round(percent)) + '%';
+
+                if (allFiles.length === 0) {
+                    emptyState.style.display = 'block';
+                    fileListEl.innerHTML = '';
+                    return;
+                } else {
+                    emptyState.style.display = 'none';
+                }
+
+                if (filtered.length === 0) {
+                    fileListEl.innerHTML = `<div class="empty-state"><span>🔍</span> No se encontraron archivos con "<strong>${searchTerm}</strong>"</div>`;
+                    return;
+                }
+
+                let html = '';
+                for (const file of filtered) {
+                    const sizeStr = formatSize(file.size || 0);
+                    const date = new Date(file.uploadedAt || Date.now());
+                    const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    
+                    // Determinar icono de previsualización
+                    const type = file.type || '';
+                    let previewHtml = '';
+                    if (type.startsWith('image/') || type.startsWith('video/') || type.startsWith('audio/')) {
+                        previewHtml = `<div class="file-preview" data-id="${file.id}">
+                            <span class="file-icon">🎬</span>
+                        </div>`;
+                    } else {
+                        const icons = {
+                            'pdf': '📄',
+                            'zip': '📦',
+                            'rar': '📦',
+                            'txt': '📝',
+                            'doc': '📝',
+                            'xls': '📊',
+                            'ppt': '📊'
+                        };
+                        let icon = '📁';
+                        const ext = file.name.split('.').pop().toLowerCase();
+                        if (icons[ext]) icon = icons[ext];
+                        previewHtml = `<div class="file-preview"><span class="file-icon">${icon}</span></div>`;
+                    }
+
+                    html += `
+                        <div class="file-card" data-id="${file.id}">
+                            ${previewHtml}
+                            <div class="file-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</div>
+                            <div class="file-meta">${sizeStr} · ${dateStr}</div>
+                            <div class="file-actions">
+                                <button class="btn btn-play play-btn" data-id="${file.id}">▶️</button>
+                                <button class="btn btn-download download-btn" data-id="${file.id}">⬇️</button>
+                                <button class="btn btn-share share-btn" data-id="${file.id}">📡</button>
+                                <button class="btn btn-delete delete-btn" data-id="${file.id}">🗑️</button>
+                            </div>
+                        </div>
+                    `;
+                }
+                fileListEl.innerHTML = html;
+
+                // Eventos de reproducción
+                document.querySelectorAll('.play-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const id = Number(btn.dataset.id);
+                        playFile(id);
+                    });
+                });
+
+                // Click en preview para reproducir
+                document.querySelectorAll('.file-preview').forEach(el => {
+                    el.addEventListener('click', () => {
+                        const id = Number(el.dataset.id);
+                        playFile(id);
+                    });
+                    el.style.cursor = 'pointer';
+                });
+
+                document.querySelectorAll('.download-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const id = Number(btn.dataset.id);
+                        downloadFileById(id);
+                    });
+                });
+
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        const id = Number(btn.dataset.id);
+                        if (confirm('¿Eliminar este archivo?')) {
+                            if (currentPlayingId === id) closePlayer();
+                            await deleteFileById(id);
+                            await renderFiles();
+                            showToast('🗑️ Archivo eliminado', 2000);
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.share-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const id = Number(btn.dataset.id);
+                        shareFileById(id);
+                    });
+                });
+
+            } catch (err) {
+                console.error('Error al renderizar:', err);
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ---------- DESCARGAR ----------
+        async function downloadFileById(id) {
+            try {
+                const file = await getFileById(id);
+                if (!file) return showToast('❌ Archivo no encontrado', 2000);
+
+                const blob = new Blob([file.data], { type: file.type || 'application/octet-stream' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = file.name;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
+                showToast(`⬇️ Descargando: ${file.name}`, 2000);
+            } catch (err) {
+                console.error('Error al descargar:', err);
+                showToast('❌ Error al descargar', 2000);
+            }
+        }
+
+        // ---------- COMPARTIR VÍA WebRTC ----------
+        async function shareFileById(id) {
+            try {
+                const file = await getFileById(id);
+                if (!file) return showToast('❌ Archivo no encontrado', 2000);
+
+                showToast('📡 Iniciando WebRTC...', 2000);
+
+                const blob = new Blob([file.data], { type: file.type || 'application/octet-stream' });
+                const arrayBuffer = await blob.arrayBuffer();
+
+                const pc1 = new RTCPeerConnection();
+                const pc2 = new RTCPeerConnection();
+
+                pc1.onicecandidate = (e) => {
+                    if (e.candidate) pc2.addIceCandidate(e.candidate);
+                };
+                pc2.onicecandidate = (e) => {
+                    if (e.candidate) pc1.addIceCandidate(e.candidate);
+                };
+
+                const channel = pc1.createDataChannel('fileTransfer');
+                channel.onopen = () => {
+                    channel.send(arrayBuffer);
+                    showToast('📤 Archivo enviado vía P2P', 3000);
+                    setTimeout(() => {
+                        pc1.close();
+                        pc2.close();
+                    }, 5000);
+                };
+
+                pc2.ondatachannel = (event) => {
+                    const receiveChannel = event.channel;
+                    receiveChannel.onmessage = (e) => {
+                        const receivedBlob = new Blob([e.data], { type: file.type });
+                        const url = URL.createObjectURL(receivedBlob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `recibido_${file.name}`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(url), 5000);
+                        showToast('📥 Archivo recibido vía P2P', 3000);
+                    };
+                };
+
+                const offer = await pc1.createOffer();
+                await pc1.setLocalDescription(offer);
+                await pc2.setRemoteDescription(offer);
+                const answer = await pc2.createAnswer();
+                await pc2.setLocalDescription(answer);
+                await pc1.setRemoteDescription(answer);
+
+                showToast('📡 Conexión P2P establecida. Enviando...', 3000);
+
+            } catch (err) {
+                console.error('Error en WebRTC:', err);
+                showToast('❌ Error en P2P', 3000);
+            }
+        }
+
+        // ---------- SUBIR ----------
+        async function handleFiles(fileList) {
+            if (!fileList || fileList.length === 0) return;
+            try {
+                for (const file of fileList) {
+                    await saveFile(file);
+                }
+                await renderFiles();
+                showToast(`✅ ${fileList.length} archivo(s) subido(s)`, 3000);
+                
+                // Reproducir automáticamente el último archivo subido si es multimedia
+                if (fileList.length === 1) {
+                    const lastFile = fileList[0];
+                    const type = lastFile.type || '';
+                    if (type.startsWith('video/') || type.startsWith('audio/') || type.startsWith('image/')) {
+                        setTimeout(async () => {
+                            const files = await getAllFiles();
+                            const last = files[files.length - 1];
+                            if (last) playFile(last.id);
+                        }, 500);
+                    }
+                }
+            } catch (err) {
+                console.error('Error al subir:', err);
+                showToast('❌ Error al guardar archivo(s)', 3000);
+            }
+        }
+
+        // ---------- EXPORTAR / IMPORTAR ----------
+        function arrayBufferToBase64(buffer) {
+            const bytes = new Uint8Array(buffer);
+            let binary = '';
+            for (let i = 0; i < bytes.length; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary);
+        }
+
+        function base64ToArrayBuffer(base64) {
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        async function exportDatabase() {
+            try {
+                const files = await getAllFiles();
+                const data = {
+                    version: '1.0',
+                    exportedAt: new Date().toISOString(),
+                    files: files.map(f => ({
+                        name: f.name,
+                        type: f.type,
+                        size: f.size,
+                        lastModified: f.lastModified,
+                        uploadedAt: f.uploadedAt,
+                        data: arrayBufferToBase64(f.data)
+                    }))
+                };
+                const json = JSON.stringify(data, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `filevault_backup_${new Date().toISOString().slice(0,10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 5000);
+                showToast('💾 Backup exportado correctamente', 3000);
+            } catch (err) {
+                console.error('Error al exportar:', err);
+                showToast('❌ Error al exportar', 3000);
+            }
+        }
+
+        async function importDatabase(file) {
+            try {
+                const text = await file.text();
+                const data = JSON.parse(text);
+                if (!data.files || !Array.isArray(data.files)) {
+                    throw new Error('Formato inválido');
+                }
+
+                if (!confirm(`⚠️ ¿Importar ${data.files.length} archivos? Esto añadirá a los existentes.`)) return;
+
+                let count = 0;
+                for (const fileData of data.files) {
+                    const buffer = base64ToArrayBuffer(fileData.data);
+                    const blob = new Blob([buffer], { type: fileData.type || 'application/octet-stream' });
+                    const fileObj = new File([blob], fileData.name, {
+                        type: fileData.type || 'application/octet-stream',
+                        lastModified: fileData.lastModified || Date.now()
+                    });
+                    await saveFile(fileObj);
+                    count++;
+                }
+                await renderFiles();
+                showToast(`✅ ${count} archivos importados correctamente`, 3000);
+            } catch (err) {
+                console.error('Error al importar:', err);
+                showToast('❌ Error al importar: ' + err.message, 3000);
+            }
+        }
+
+        // ---------- EVENTOS UI ----------
+        dropzone.addEventListener('click', () => fileInput.click());
+
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('dragover');
+        });
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                handleFiles(e.dataTransfer.files);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFiles(e.target.files);
+                fileInput.value = '';
+            }
+        });
+
+        clearAllBtn.addEventListener('click', async () => {
+            if (!confirm('⚠️ ¿Eliminar TODOS los archivos? Esta acción es permanente.')) return;
+            try {
+                closePlayer();
+                await clearAllFiles();
+                await renderFiles();
+                showToast('🗑️ Todos los archivos eliminados', 3000);
+            } catch (err) {
+                console.error(err);
+                showToast('❌ Error al borrar archivos', 3000);
+            }
+        });
+
+        searchInput.addEventListener('input', (e) => {
+            searchTerm = e.target.value;
+            renderFiles();
+        });
+
+        clearSearchBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            searchTerm = '';
+            renderFiles();
+        });
+
+        exportBtn.addEventListener('click', exportDatabase);
+        importBtn.addEventListener('click', () => importFileInput.click());
+
+        importFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                importDatabase(e.target.files[0]);
+                importFileInput.value = '';
+            }
+        });
+
+        // ---------- INICIO ----------
+        (async function init() {
+            try {
+                await openDB();
+                await renderFiles();
+                console.log('🎬 FileVault Media listo');
+                showToast('🎬 FileVault Media cargado', 2000);
+            } catch (err) {
+                console.error('Fallo al iniciar:', err);
+                showToast('❌ Error al iniciar IndexedDB', 3000);
+            }
+        })();
+
+        window.__fileVault = { getAllFiles, clearAllFiles, deleteFileById, exportDatabase, playFile };
+    })();
+</script>
+</body>
+</html>
